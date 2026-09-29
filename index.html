@@ -146,6 +146,7 @@ new Set(Object.values(SPR)).forEach(n=>loads.push(load(n,'sp/'+n+'.png')));
 ['cafe','pharmacy','kiosk'].forEach(n=>{loads.push(load(n+'_bg','sc/'+n+'_bg.jpg'));loads.push(load(n+'_npc','sc/'+n+'_npc.png'));});
 loads.push(load('logo','logo.png'));
 loads.push(load('avatar','avatar_'+(CFG.char==='leo'?'leo':'ana')+'.jpg'));
+loads.push(load('idle','idle/'+(CFG.char==='leo'?'leo':'ana')+'.png'));
 loads.push(load('walker','walk/'+(CFG.char==='leo'?'leo':'ana')+'.png'));
 let PAT={};
 function makePatterns(){
@@ -361,7 +362,9 @@ function drawHero(){if(!hero.visible)return;const img=IMG.walker;if(!img)return;
   const a=clamp((now-hero.t0)/.5),pop=eBack(a);const p=P(hero.x,hero.y);const h=TW*(CFG.mode==='play'?1.9:1.55)*cam.z*pop,w=h*fw/img.height;
   g.save();g.globalAlpha=.22*hero.alpha;g.fillStyle='#2a1a0a';g.beginPath();g.ellipse(p[0],p[1],w*.32,w*.12,0,0,7);g.fill();g.restore();
   const fr=hero.moving?Math.floor(hero.phase)%4:0;const bob=hero.moving?Math.abs(Math.sin(hero.phase*1.57))*h*.012:0;
-  g.save();g.globalAlpha=hero.alpha;g.translate(p[0],p[1]-bob);if(hero.flip)g.scale(-1,1);g.drawImage(img,fr*fw,0,fw,img.height,-w/2,-h,w,h);g.restore();}
+  g.save();g.globalAlpha=hero.alpha;g.translate(p[0],p[1]-bob);if(hero.flip)g.scale(-1,1);
+  const idle=IMG.idle;if(!hero.moving&&idle){const br=1+Math.sin(now*2.4)*.006,ih=h*.97*br,iw=ih*idle.width/idle.height;g.drawImage(idle,-iw/2,-ih,iw,ih);}
+  else g.drawImage(img,fr*fw,0,fw,img.height,-w/2,-h,w,h);g.restore();}
 function drawDust(){for(let i=dust.length-1;i>=0;i--){const d=dust[i],t=(now-d.t)/.7;if(t>1){dust.splice(i,1);continue;}const p=P(d.x,d.y,t*.3);
   g.fillStyle=`rgba(240,228,205,${.7*(1-t)})`;g.beginPath();g.arc(p[0],p[1],TW*cam.z*d.r*(1+t),0,7);g.fill();}}
 
