@@ -64,6 +64,7 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
     <h1>Speak City · demo</h1>
     <label>Mode<select id="s_mode"><option value="auto">Auto video</option><option value="play">Play: tap buildings</option></select></label>
     <label>Character<select id="s_char"><option value="ana">Ana</option><option value="leo">Leo</option></select></label>
+    <label>Café barista<select id="s_barista"><option value="lucia">Lucía (female)</option><option value="lucas">Lucas (male)</option></select></label>
     <label>Dialogue language<select id="s_lang"><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="de">German</option></select></label>
     <label>Walk speed <span id="spv"></span><input id="s_speed" type="range" min="0.4" max="2.5" step="0.1"></label>
     <button id="restart">Apply &amp; restart</button>
@@ -85,11 +86,11 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
 // ============================================================ config
 const Q=new URLSearchParams(location.search);
 let SPEED=parseFloat(Q.get('speed')||'1')||1;
-const CFG={rec:Q.has('rec'),mode:Q.get('mode')||'auto',char:Q.get('char')||'ana',lang:Q.get('lang')||'es',capture:Q.has('capture'),brand:Q.get('brand')||'Speak City',city:Q.get('city')||'Valmoreda'};
+const CFG={barista:Q.get('barista')==='lucas'?'lucas':'lucia',rec:Q.has('rec'),mode:Q.get('mode')||'auto',char:Q.get('char')||'ana',lang:Q.get('lang')||'es',capture:Q.has('capture'),brand:Q.get('brand')||'Speak City',city:Q.get('city')||'Valmoreda'};
 if(CFG.capture)document.body.classList.add('capture');
-document.getElementById('s_char').value=CFG.char;document.getElementById('s_mode').value=CFG.mode;
+document.getElementById('s_char').value=CFG.char;document.getElementById('s_mode').value=CFG.mode;document.getElementById('s_barista').value=CFG.barista;
 {const sl=document.getElementById('s_speed'),sv=document.getElementById('spv');sl.value=SPEED;sv.textContent='×'+SPEED.toFixed(1);sl.oninput=()=>{SPEED=parseFloat(sl.value);sv.textContent='×'+SPEED.toFixed(1);};}document.getElementById('s_lang').value=CFG.lang;
-document.getElementById('restart').onclick=()=>{const p=new URLSearchParams();p.set('speed',SPEED);p.set('mode',document.getElementById('s_mode').value);p.set('char',document.getElementById('s_char').value);p.set('lang',document.getElementById('s_lang').value);location.search=p.toString();};
+document.getElementById('restart').onclick=()=>{const p=new URLSearchParams();p.set('speed',SPEED);p.set('mode',document.getElementById('s_mode').value);p.set('char',document.getElementById('s_char').value);p.set('barista',document.getElementById('s_barista').value);p.set('lang',document.getElementById('s_lang').value);location.search=p.toString();};
 const W=540,H=960,cv=document.getElementById('c'),g=cv.getContext('2d');
 const DPR=(CFG.capture||CFG.rec)?2:Math.min(2,devicePixelRatio||1);cv.width=W*DPR;cv.height=H*DPR;
 const FONT="'Public Sans',system-ui,sans-serif",MONO="'Space Mono',monospace";
@@ -143,7 +144,8 @@ const loads=[];
 new Set(Object.values(SPR)).forEach(n=>loads.push(load(n,'sp/'+n+'.png')));
 [0,1,2,3].forEach(i=>loads.push(load('park'+i,'sp/park'+i+'.png')));
 ['grass','paving','cobble'].forEach(n=>loads.push(load(n,'sp/'+n+'.jpg')));
-['cafe','pharmacy','kiosk'].forEach(n=>{loads.push(load(n+'_bg','sc/'+n+'_bg.jpg'));loads.push(load(n+'_npc','sc/'+n+'_npc.png'));});
+['cafe','pharmacy','kiosk'].forEach(n=>{loads.push(load(n+'_bg','sc/'+n+'_bg.jpg'));loads.push(load(n+'_npc','sc/'+n+'_npc'+(n==='cafe'&&CFG.barista==='lucas'?'_lucas':'')+'.png'));});
+if(CFG.barista==='lucas')STOPS.cafe.npc='Lucas';
 loads.push(load('logo','logo.png'));
 loads.push(load('avatar','avatar_'+(CFG.char==='leo'?'leo':'ana')+'.jpg'));
 loads.push(load('idle','idle/'+(CFG.char==='leo'?'leo':'ana')+'.png'));
@@ -434,7 +436,8 @@ function dotted(text,x,y,maxW,size){g.font=`800 ${size}px ${FONT}`;const lines=w
   const w=g.measureText(l).width;g.strokeStyle='rgba(255,255,255,.7)';g.setLineDash([2,4]);g.lineWidth=1.6;g.beginPath();g.moveTo(x,yy+6);g.lineTo(x+w,yy+6);g.stroke();g.setLineDash([]);});return lines.length;}
 function drawScene(){if(!scene)return;const k=scene.st.scene,bg=IMG[k+'_bg'],npc=IMG[k+'_npc'];
   g.save();if(bg)cover(bg,0,0,W,H);
-  if(npc){const t=eOut(clamp((now-scene.t0)/.6));const h=H*.8,w=h*npc.width/npc.height;g.drawImage(npc,W/2-w/2,H-h+(1-t)*30,w,h);}
+  if(npc&&k==='cafe'&&CFG.barista==='lucas'){const t=eOut(clamp((now-scene.t0)/.6));g.save();g.translate(W/2,H+(1-t)*30);g.scale(.9,.9);cover(npc,-W/2,-H,W,H);g.restore();}
+  else if(npc){const t=eOut(clamp((now-scene.t0)/.6));const h=H*.8,w=h*npc.width/npc.height;g.drawImage(npc,W/2-w/2,H-h+(1-t)*30,w,h);}
   const gr=g.createLinearGradient(0,H*.5,0,H);gr.addColorStop(0,'rgba(20,14,8,0)');gr.addColorStop(.3,'rgba(20,14,8,.6)');gr.addColorStop(.6,'rgba(20,14,8,.85)');gr.addColorStop(1,'rgba(20,14,8,.92)');g.fillStyle=gr;g.fillRect(0,H*.5,W,H*.5);
   // top bar
   g.fillStyle='rgba(40,30,20,.45)';g.beginPath();g.arc(42,64,20,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2.4;g.beginPath();g.moveTo(35,57);g.lineTo(49,71);g.moveTo(49,57);g.lineTo(35,71);g.stroke();
@@ -519,7 +522,7 @@ function draw(){g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#9DB86A';g.fillRect
 
 
 // ============================================================ render video (real-time capture of the auto scenario)
-document.getElementById('render').onclick=()=>{const p=new URLSearchParams();p.set('speed',SPEED);p.set('mode','auto');p.set('rec','1');p.set('char',document.getElementById('s_char').value);p.set('lang',document.getElementById('s_lang').value);location.search=p.toString();};
+document.getElementById('render').onclick=()=>{const p=new URLSearchParams();p.set('speed',SPEED);p.set('mode','auto');p.set('rec','1');p.set('char',document.getElementById('s_char').value);p.set('barista',document.getElementById('s_barista').value);p.set('lang',document.getElementById('s_lang').value);location.search=p.toString();};
 if(CFG.mode!=='auto')document.getElementById('render').hidden=true;
 let recorder=null,chunks=[],recStart=0;const recEl=document.getElementById('recstat');
 function startRecording(){if(!CFG.rec||!window.MediaRecorder)return;
