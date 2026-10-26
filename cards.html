@@ -87,7 +87,7 @@ button.b:disabled{opacity:.5;cursor:default}
     <div class="stage"><canvas id="cv" width="1080" height="1920" aria-label="Card preview, 1080 by 1920"></canvas></div>
     <div class="row">
       <div class="ctl"><label class="lbl" for="bg">Preview background</label>
-        <select id="bg"><option value="none">Transparent</option><option value="split">Split screen (café / selfie)</option><option value="green">Green screen</option></select></div>
+        <select id="bg"><option value="none">Transparent</option><option value="split">Split screen (café / selfie)</option><option value="green">Green screen</option><option value="blue">Blue screen</option></select></div>
       <div class="ctl"><label class="lbl" for="pos">Card height in frame</label><input id="pos" type="range" min="40" max="1300" step="10" value="128"></div>
     </div>
     <div class="row">
@@ -97,7 +97,7 @@ button.b:disabled{opacity:.5;cursor:default}
     <label class="toggle"><input id="chk" type="checkbox" checked> Green check at the end</label>
     <div class="row">
       <div class="ctl"><label class="lbl" for="vfmt">Video format</label>
-        <select id="vfmt"><option value="webm">WebM · transparent</option><option value="mp4">MP4 · H.264 (green screen)</option></select></div>
+        <select id="vfmt"><option value="webm">WebM · transparent</option><option value="mp4">MP4 · H.264 (green / blue screen)</option></select></div>
     </div>
     <div class="row">
       <button class="b ghost" id="play">▶ Play animation</button>
@@ -108,7 +108,7 @@ button.b:disabled{opacity:.5;cursor:default}
       <button class="b ghost" id="zip">Save all PNG (zip)</button>
     </div>
     <p class="status" id="status" role="status"></p>
-    <p class="hint">PNG and video are 1080×1920 with a transparent background (the preview background is not exported unless you pick green screen). The video records in real time, so keep this tab open while it saves. WebM keeps the transparency (Chrome and Firefox; CapCut and DaVinci read it). MP4 (H.264) plays everywhere but has no transparency, so it is always saved on a green screen for keying (Chrome, Edge and Safari).</p>
+    <p class="hint">PNG and video are 1080×1920 with a transparent background (the preview background is not exported unless you pick green or blue screen). The video records in real time, so keep this tab open while it saves. WebM keeps the transparency (Chrome and Firefox; CapCut and DaVinci read it). MP4 (H.264) plays everywhere but has no transparency, so it is saved on the blue screen if you pick it, otherwise on a green screen, for keying (Chrome, Edge and Safari).</p>
   </section>
 </div>
 
@@ -188,8 +188,9 @@ function watermarks(x,y,w,h){g.save();g.globalAlpha=.13;g.strokeStyle=COL.o2;g.l
   cx=x+w-38;cy=y+52;g.beginPath();g.roundRect(cx-18,cy-14,36,24,9);g.moveTo(cx-6,cy+10);g.lineTo(cx-11,cy+19);g.lineTo(cx+2,cy+10);g.stroke();
   cx=x+34;cy=y+h-48;g.beginPath();g.roundRect(cx-7,cy-15,14,22,7);g.stroke();g.beginPath();g.arc(cx,cy,12,.2,Math.PI-.2);g.stroke();g.beginPath();g.moveTo(cx,cy+12);g.lineTo(cx,cy+18);g.stroke();
   cx=x+w-36;cy=y+h-52;g.beginPath();g.arc(cx,cy,11,Math.PI*.85,Math.PI*.15);g.lineTo(cx,cy+20);g.closePath();g.stroke();g.beginPath();g.arc(cx,cy,4,0,7);g.stroke();g.restore();}
+const KEY={green:'#00B140',blue:'#0047BB'},keyBg=()=>KEY[$('bg').value]?$('bg').value:null;
 function drawBg(mode){
-  if(mode==='green'){g.fillStyle='#00B140';g.fillRect(0,0,W,H);return;}
+  if(KEY[mode]){g.fillStyle=KEY[mode];g.fillRect(0,0,W,H);return;}
   if(mode!=='split')return;
   let gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#C98A55');gr.addColorStop(1,'#6E4326');g.fillStyle=gr;g.fillRect(0,0,W/2,H);
   gr=g.createLinearGradient(W/2,0,W,H);gr.addColorStop(0,'#C9A27F');gr.addColorStop(1,'#F2D9CF');g.fillStyle=gr;g.fillRect(W/2,0,W/2,H);
@@ -221,8 +222,8 @@ function say(msg,ok){statusEl.textContent=msg;statusEl.className='status'+(ok?' 
 async function save(filename,data){try{const a=document.createElement('a');a.href=URL.createObjectURL(data);a.download=filename;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);say('Saved '+filename,true);return true;}catch(e){say('Could not save the file.');return false;}}
 const pngBlob=()=>new Promise(r=>cv.toBlob(r,'image/png'));
-$('png').onclick=async()=>{if(!cards[cur])return;playing++;frame(cur,0,{bg:$('bg').value==='green'?'green':null});const b=await pngBlob();render();await save(slug(cards[cur],cur)+'.png',b);};
-$('zip').onclick=async()=>{if(!cards.length)return;playing++;const z=new JSZip();for(let i=0;i<cards.length;i++){frame(i,0,{bg:$('bg').value==='green'?'green':null});z.file(slug(cards[i],i)+'.png',await pngBlob());}
+$('png').onclick=async()=>{if(!cards[cur])return;playing++;frame(cur,0,{bg:keyBg()});const b=await pngBlob();render();await save(slug(cards[cur],cur)+'.png',b);};
+$('zip').onclick=async()=>{if(!cards.length)return;playing++;const z=new JSZip();for(let i=0;i<cards.length;i++){frame(i,0,{bg:keyBg()});z.file(slug(cards[i],i)+'.png',await pngBlob());}
   render();await save('speakcity_phrase_cards.zip',await z.generateAsync({type:'blob'}));};
 const VTYPES={webm:['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'],mp4:['video/mp4;codecs=avc1.640028','video/mp4;codecs=avc1.4d0028','video/mp4;codecs=avc1','video/mp4']};
 const vtype=f=>window.MediaRecorder&&VTYPES[f].find(t=>MediaRecorder.isTypeSupported(t))||'';
@@ -232,7 +233,7 @@ const vtype=f=>window.MediaRecorder&&VTYPES[f].find(t=>MediaRecorder.isTypeSuppo
   sel.addEventListener('change',()=>{try{localStorage.setItem('scpc-vfmt',sel.value);}catch(e){}});}
 $('webm').onclick=async()=>{const c=cards[cur];if(!c)return;if(!window.MediaRecorder){say('This browser cannot record video.');return;}
   const fmt=$('vfmt').value,type=vtype(fmt);if(!type){say((fmt==='mp4'?'MP4':'WebM')+' recording is not supported in this browser.');return;}const ext=type.includes('mp4')?'mp4':'webm';
-  const bgm=ext==='mp4'||$('bg').value==='green'?'green':null,btns=['png','webm','zip','play'].map($);btns.forEach(b=>b.disabled=true);playing++;
+  const bgm=keyBg()||(ext==='mp4'?'green':null),btns=['png','webm','zip','play'].map($);btns.forEach(b=>b.disabled=true);playing++;
   const stream=cv.captureStream(30),rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:12e6}),chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
   const done=new Promise(r=>rec.onstop=r);const tm=timing(c);frame(cur,0,{bg:bgm,anim:true});rec.start(250);const t0=performance.now();say('Recording '+tm.dur.toFixed(1)+' s…');
   await new Promise(res=>{const loop=n=>{const t=(n-t0)/1000;frame(cur,Math.min(t,tm.dur),{bg:bgm,anim:true});if(t<tm.dur+.1)requestAnimationFrame(loop);else res();};requestAnimationFrame(loop);});
