@@ -96,6 +96,10 @@ button.b:disabled{opacity:.5;cursor:default}
     </div>
     <label class="toggle"><input id="chk" type="checkbox" checked> Green check at the end</label>
     <div class="row">
+      <div class="ctl"><label class="lbl" for="vfmt">Video format</label>
+        <select id="vfmt"><option value="webm">WebM · transparent</option><option value="mp4">MP4 · H.264 (green screen)</option></select></div>
+    </div>
+    <div class="row">
       <button class="b ghost" id="play">▶ Play animation</button>
     </div>
     <div class="row">
@@ -104,7 +108,7 @@ button.b:disabled{opacity:.5;cursor:default}
       <button class="b ghost" id="zip">Save all PNG (zip)</button>
     </div>
     <p class="status" id="status" role="status"></p>
-    <p class="hint">PNG and video are 1080×1920 with a transparent background (the preview background is not exported unless you pick green screen). The video records in real time, so keep this tab open while it saves. Chrome and Firefox save WebM with transparency (CapCut and DaVinci read it); Safari saves MP4 without transparency, so pick green screen there.</p>
+    <p class="hint">PNG and video are 1080×1920 with a transparent background (the preview background is not exported unless you pick green screen). The video records in real time, so keep this tab open while it saves. WebM keeps the transparency (Chrome and Firefox; CapCut and DaVinci read it). MP4 (H.264) plays everywhere but has no transparency, so it is always saved on a green screen for keying (Chrome, Edge and Safari).</p>
   </section>
 </div>
 
@@ -220,9 +224,15 @@ const pngBlob=()=>new Promise(r=>cv.toBlob(r,'image/png'));
 $('png').onclick=async()=>{if(!cards[cur])return;playing++;frame(cur,0,{bg:$('bg').value==='green'?'green':null});const b=await pngBlob();render();await save(slug(cards[cur],cur)+'.png',b);};
 $('zip').onclick=async()=>{if(!cards.length)return;playing++;const z=new JSZip();for(let i=0;i<cards.length;i++){frame(i,0,{bg:$('bg').value==='green'?'green':null});z.file(slug(cards[i],i)+'.png',await pngBlob());}
   render();await save('speakcity_phrase_cards.zip',await z.generateAsync({type:'blob'}));};
+const VTYPES={webm:['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'],mp4:['video/mp4;codecs=avc1.640028','video/mp4;codecs=avc1.4d0028','video/mp4;codecs=avc1','video/mp4']};
+const vtype=f=>window.MediaRecorder&&VTYPES[f].find(t=>MediaRecorder.isTypeSupported(t))||'';
+{const sel=$('vfmt');for(const o of sel.options)if(!vtype(o.value)){o.disabled=true;o.textContent+=' — not in this browser';}
+  if(sel.selectedOptions[0].disabled){const ok=[...sel.options].find(o=>!o.disabled);if(ok)sel.value=ok.value;}
+  try{const v=localStorage.getItem('scpc-vfmt');if(v&&vtype(v))sel.value=v;}catch(e){}
+  sel.addEventListener('change',()=>{try{localStorage.setItem('scpc-vfmt',sel.value);}catch(e){}});}
 $('webm').onclick=async()=>{const c=cards[cur];if(!c)return;if(!window.MediaRecorder){say('This browser cannot record video.');return;}
-  const types=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'],type=types.find(t=>MediaRecorder.isTypeSupported(t))||'';const ext=type.includes('mp4')?'mp4':'webm';
-  const bgm=$('bg').value==='green'?'green':null,btns=['png','webm','zip','play'].map($);btns.forEach(b=>b.disabled=true);playing++;
+  const fmt=$('vfmt').value,type=vtype(fmt);if(!type){say((fmt==='mp4'?'MP4':'WebM')+' recording is not supported in this browser.');return;}const ext=type.includes('mp4')?'mp4':'webm';
+  const bgm=ext==='mp4'||$('bg').value==='green'?'green':null,btns=['png','webm','zip','play'].map($);btns.forEach(b=>b.disabled=true);playing++;
   const stream=cv.captureStream(30),rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:12e6}),chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
   const done=new Promise(r=>rec.onstop=r);const tm=timing(c);frame(cur,0,{bg:bgm,anim:true});rec.start(250);const t0=performance.now();say('Recording '+tm.dur.toFixed(1)+' s…');
   await new Promise(res=>{const loop=n=>{const t=(n-t0)/1000;frame(cur,Math.min(t,tm.dur),{bg:bgm,anim:true});if(t<tm.dur+.1)requestAnimationFrame(loop);else res();};requestAnimationFrame(loop);});
