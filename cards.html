@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3EEE6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon-192.png">
+<title>Speak City · Phrase cards</title>
+<script src="assets/vendor/jszip.min.js"></script>
+<style>
+@font-face{font-family:'Public Sans';font-weight:400;src:url(assets/fonts/public-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:600;src:url(assets/fonts/public-sans-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Public Sans';font-weight:800;src:url(assets/fonts/public-sans-latin-800-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Mono';font-weight:700;src:url(assets/fonts/space-mono-latin-700-normal.woff2) format('woff2')}
+/* Layout: tool — left column input + card list, right column live 9:16 preview with export controls */
+:root{
+  --bg:#F3EEE6; --panel:#FFFCF7; --ink:#231C16; --mute:#7A6E62; --line:#E3D8C8;
+  --accent:#D9562A; --accent-ink:#fff; --soft:#F6E4D6; --ok:#2F8F5E;
+  --ui:'Public Sans',system-ui,sans-serif; --mono:'Space Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1B1713;--panel:#26201B;--ink:#F2EBE2;--mute:#A79A8C;--line:#3B332B;--accent:#EE7446;--accent-ink:#1B1713;--soft:#3A2A20;--ok:#5CC48C;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1B1713;--panel:#26201B;--ink:#F2EBE2;--mute:#A79A8C;--line:#3B332B;--accent:#EE7446;--accent-ink:#1B1713;--soft:#3A2A20;--ok:#5CC48C;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:20px;align-items:start}
+@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}}
+header{max-width:1180px;margin:0 auto 16px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+h1{font-size:22px;font-weight:800;margin:0;text-wrap:balance}
+header p{margin:0;color:var(--mute);font-size:14px}
+.tabs{max-width:1180px;margin:0 auto 14px;display:flex;gap:6px}
+.tabs a{font:800 14px var(--ui);padding:8px 14px;border-radius:99px;border:1px solid var(--line);color:var(--ink);text-decoration:none;background:var(--panel)}
+.tabs a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tabs a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+label.lbl,.lbl{font:700 11px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+textarea{width:100%;min-height:190px;resize:vertical;font:14px/1.6 var(--mono);font-weight:400;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+textarea:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:13px;color:var(--mute);margin:0}
+.hint code{font-family:var(--mono);font-size:12px;background:var(--soft);padding:1px 5px;border-radius:5px;color:var(--ink)}
+.list{display:flex;flex-direction:column;gap:6px}
+.item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.item[aria-current="true"]{border-color:var(--accent);background:var(--soft)}
+.num{font:700 12px var(--mono);color:var(--mute);text-align:center}
+.item .es{font-weight:800;color:#D7311F;overflow-wrap:anywhere}
+:root[data-theme="dark"] .item .es{color:#FF7A66}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .item .es{color:#FF7A66}}
+.item .en{font-size:13px;color:var(--mute);overflow-wrap:anywhere}
+.chip{font:700 10px var(--mono);letter-spacing:.05em;padding:3px 7px;border-radius:99px;background:var(--soft);color:var(--accent);white-space:nowrap}
+.chip.warn{background:transparent;border:1px solid var(--accent)}
+.stage{position:relative;width:100%;aspect-ratio:9/16;max-width:100%;border-radius:14px;overflow:hidden;
+  background:repeating-conic-gradient(var(--line) 0 25%,var(--panel) 0 50%) 0 0/22px 22px}
+canvas{width:100%;height:100%;display:block}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctl{display:flex;flex-direction:column;gap:4px;flex:1 1 140px;min-width:0}
+select,input[type=number]{font:14px var(--ui);padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.toggle{display:flex;gap:8px;align-items:center;font-size:14px}
+.toggle input{accent-color:var(--accent);width:18px;height:18px}
+button.b{font:800 14px var(--ui);padding:10px 14px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.b.ghost{background:transparent;color:var(--accent)}
+button.b:disabled{opacity:.5;cursor:default}
+.status{font-size:13px;color:var(--mute);min-height:1.3em;margin:0}
+.status.ok{color:var(--ok)}
+</style>
+</head>
+<body>
+
+<nav class="tabs" aria-label="Demo sections"><a href="index.html">City demo</a><a href="cards.html" aria-current="page">Phrase cards</a></nav>
+<header>
+  <h1>Speak City Phrase Cards</h1>
+  <p>One line per card. The Spanish word being spoken lights up yellow in the video export.</p>
+</header>
+
+<div class="wrap">
+  <section class="panel" aria-label="Phrases">
+    <label class="lbl" for="src">Phrases</label>
+    <textarea id="src" spellcheck="false"></textarea>
+    <p class="hint">Format: <code>Spanish (English) /pro-NUN-see-AY-shun/</code>. Keep one pronunciation chunk per Spanish word, separated by spaces, so the yellow dot lands under the right word.</p>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section class="panel" aria-label="Preview and export">
+    <div class="stage"><canvas id="cv" width="1080" height="1920" aria-label="Card preview, 1080 by 1920"></canvas></div>
+    <div class="row">
+      <div class="ctl"><label class="lbl" for="bg">Preview background</label>
+        <select id="bg"><option value="none">Transparent</option><option value="split">Split screen (café / selfie)</option><option value="green">Green screen</option></select></div>
+      <div class="ctl"><label class="lbl" for="pos">Card height in frame</label><input id="pos" type="range" min="40" max="1300" step="10" value="128"></div>
+    </div>
+    <div class="row">
+      <div class="ctl"><label class="lbl" for="spw">Seconds per word</label><input id="spw" type="number" min="0.2" max="3" step="0.05" value="0.45"></div>
+      <div class="ctl"><label class="lbl" for="reps">Highlight passes</label><input id="reps" type="number" min="1" max="4" step="1" value="2"></div>
+    </div>
+    <label class="toggle"><input id="chk" type="checkbox" checked> Green check at the end</label>
+    <div class="row">
+      <button class="b ghost" id="play">▶ Play animation</button>
+    </div>
+    <div class="row">
+      <button class="b" id="png">Save PNG</button>
+      <button class="b" id="webm">Save video</button>
+      <button class="b ghost" id="zip">Save all PNG (zip)</button>
+    </div>
+    <p class="status" id="status" role="status"></p>
+    <p class="hint">PNG and video are 1080×1920 with a transparent background (the preview background is not exported unless you pick green screen). The video records in real time, so keep this tab open while it saves. Chrome and Firefox save WebM with transparency (CapCut and DaVinci read it); Safari saves MP4 without transparency, so pick green screen there.</p>
+  </section>
+</div>
+
+<script>
+'use strict';
+const LOGO='assets/logo.png';
+const SAMPLE=`Vale (Sounds good) /BAH-leh/
+Voy de camino (I'm on my way) /boy deh kah-MEE-noh/
+Dame un segundo (Give me a second) /DAH-meh oon seh-GOON-doh/
+¿Perdona, cómo? (Sorry, what was that?) /pehr-DOH-nah, KOH-moh/
+Aquí tienes (Here you go) /ah-KEE TYEH-nehs/
+Invito yo (It's on me) /een-BEE-toh YOH/
+¡Qué alegría verte! (Nice to see you) /keh ah-leh-GREE-ah BEHR-teh/`;
+const $=id=>document.getElementById(id);
+const src=$('src'),list=$('list'),cv=$('cv'),g=cv.getContext('2d'),statusEl=$('status');
+const W=540,H=960,K=2,F="'Public Sans',system-ui,sans-serif";
+const COL={ink:'#1d1d1f',red:'#D7311F',pr:'#8A5A3C',yellow:'#FFC83D',green:'#2FA866',o1:'#F7A928',o2:'#EC6A2C'};
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),eOut=t=>1-Math.pow(1-t,3),eBack=t=>{const c=1.7;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)};
+const rr=(x,y,w,h,r)=>{g.beginPath();g.roundRect(x,y,w,h,r);};
+const logo=new Image();logo.src=LOGO;
+
+// ------------------------------------------------ parsing
+function parse(line){
+  let s=line.trim();if(!s)return null;
+  let pr='',en='';
+  const pm=s.match(/\/([^/]+)\/\s*$/);if(pm){pr=pm[1].trim();s=s.slice(0,pm.index).trim();}
+  const em=s.match(/\(([^)]*)\)/);if(em){en=em[1].trim();s=(s.slice(0,em.index)+s.slice(em.index+em[0].length)).trim();}
+  const es=s.replace(/\s+/g,' ').trim();if(!es)return null;
+  const words=es.split(' '),chunks=pr?pr.split(/\s+/):[];
+  return{es,en,pr,words,chunks,matched:!pr||chunks.length===words.length};
+}
+let cards=[],cur=0;
+function slug(c,i){return String(i+1).padStart(2,'0')+'_'+c.es.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'').toLowerCase().slice(0,40);}
+
+// ------------------------------------------------ layout + drawing (540×960 design space, drawn ×2)
+function fontFit(text,weight,max,min,maxW){let s=max;g.font=`${weight} ${s}px ${F}`;while(g.measureText(text).width>maxW&&s>min){s--;g.font=`${weight} ${s}px ${F}`;}return s;}
+function wrapWords(words,maxW){const lines=[];let curL=[];for(const w of words){const t=[...curL,w].join(' ');if(curL.length&&g.measureText(t).width>maxW){lines.push(curL);curL=[w];}else curL.push(w);}if(curL.length)lines.push(curL);return lines;}
+function layout(c,x,w){
+  const inner=w-64,L={};
+  L.enSize=c.en?fontFit(c.en,800,25,16,inner):0;
+  // Spanish: shrink to 32, then wrap
+  L.esSize=fontFit(c.es,800,46,32,inner);L.esLines=wrapWords(c.words.map((s,i)=>i),9e9);
+  g.font=`800 ${L.esSize}px ${F}`;
+  if(g.measureText(c.es).width>inner){L.esLines=[];let cl=[];for(let i=0;i<c.words.length;i++){const t=[...cl.map(k=>c.words[k]),c.words[i]].join(' ');if(cl.length&&g.measureText(t).width>inner){L.esLines.push(cl);cl=[i];}else cl.push(i);}if(cl.length)L.esLines.push(cl);}
+  L.prSize=c.pr?fontFit(c.pr,'italic 600',23,14,inner):0;
+  let y=22;L.enY=c.en?y+30:y;y=L.enY+(c.en?14:0);
+  L.esY=[];for(let i=0;i<L.esLines.length;i++){y+=L.esSize*1.12;L.esY.push(y);}
+  if(c.pr){y+=L.prSize+16;L.prY=y;}
+  L.h=y+44;return L;}
+function drawCard(c,t,opt){
+  const x=44,w=W-88,L=layout(c,x,w),y=opt.y/K*1,h=L.h;
+  const pop=opt.anim?eBack(clamp(t/.32)):1;const chkT=opt.chkT,chk=chkT!=null&&t>=chkT;
+  g.save();g.translate(W/2,y+h/2);g.scale(pop,pop);g.translate(-W/2,-(y+h/2));
+  g.shadowColor='rgba(40,20,0,.28)';g.shadowBlur=22;g.shadowOffsetY=6;
+  const gr=g.createLinearGradient(x,y,x+w,y+h);gr.addColorStop(0,COL.o1);gr.addColorStop(1,COL.o2);g.fillStyle=gr;rr(x,y,w,h,30);g.fill();
+  g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0;
+  if(chk){const f=clamp(1-(t-chkT)/.7);if(f>0){g.globalAlpha=f;g.fillStyle=COL.green;rr(x,y,w,h,30);g.fill();g.globalAlpha=1;}}
+  g.fillStyle='#fff';rr(x+6,y+6,w-12,h-12,25);g.fill();
+  watermarks(x+6,y+6,w-12,h-12);
+  const act=opt.word;g.textBaseline='alphabetic';g.textAlign='left';
+  if(c.en){g.font=`800 ${L.enSize}px ${F}`;const ew=g.measureText(c.en).width;g.fillStyle=COL.ink;g.fillText(c.en,W/2-ew/2,y+L.enY);g.fillRect(W/2-ew/2,y+L.enY+7,ew,2.4);}
+  g.font=`800 ${L.esSize}px ${F}`;const sp=g.measureText(' ').width;
+  L.esLines.forEach((ln,li)=>{const ws=ln.map(i=>g.measureText(c.words[i]).width),tot=ws.reduce((a,b)=>a+b,0)+sp*(ln.length-1);let cx=W/2-tot/2;const by=y+L.esY[li];
+    ln.forEach((i,k)=>{if(i===act){g.fillStyle=COL.yellow;rr(cx-7,by-L.esSize*.86,ws[k]+14,L.esSize*1.12,10);g.fill();}g.fillStyle=COL.red;g.fillText(c.words[i],cx,by);cx+=ws[k]+sp;});});
+  if(c.pr){g.font=`italic 600 ${L.prSize}px ${F}`;const psp=g.measureText(' ').width,pw=c.chunks.map(s=>g.measureText(s).width),ptot=pw.reduce((a,b)=>a+b,0)+psp*(pw.length-1);let px=W/2-ptot/2;const py=y+L.prY;
+    // which chunk gets the dot: same index when counts match, else proportional
+    const ci=act<0?-1:c.matched?act:Math.min(c.chunks.length-1,Math.floor((act+.5)/c.words.length*c.chunks.length));
+    c.chunks.forEach((s,i)=>{g.fillStyle=i===ci?COL.ink:COL.pr;g.fillText(s,px,py);if(i===ci){g.save();g.fillStyle=COL.yellow;g.beginPath();g.arc(px+pw[i]/2,py+15,5.5,0,7);g.fill();g.restore();}px+=pw[i]+psp;});}
+  if(logo.complete&&logo.naturalWidth){const lw=104,lh=lw*logo.naturalHeight/logo.naturalWidth;g.drawImage(logo,W/2-lw/2,y+h-lh*.42,lw,lh);}
+  g.restore();
+  if(chk){const e=eBack(clamp((t-chkT)/.35));g.save();g.translate(x+w-14,y+14);g.scale(e,e);g.shadowColor='rgba(0,60,20,.35)';g.shadowBlur=10;g.fillStyle='#fff';g.beginPath();g.arc(0,0,27,0,7);g.fill();g.shadowColor='transparent';
+    g.fillStyle=COL.green;g.beginPath();g.arc(0,0,22,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=5.5;g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(-10,1);g.lineTo(-3,8);g.lineTo(11,-8);g.stroke();g.restore();}
+  return{x,y,w,h:h+30};}
+function watermarks(x,y,w,h){g.save();g.globalAlpha=.13;g.strokeStyle=COL.o2;g.lineWidth=2.6;g.lineCap='round';g.lineJoin='round';
+  let cx=x+34,cy=y+40;g.beginPath();g.moveTo(cx-15,cy-4);g.lineTo(cx+11,cy-4);g.lineTo(cx+7,cy+15);g.lineTo(cx-11,cy+15);g.closePath();g.stroke();g.beginPath();g.arc(cx+13,cy+4,6,-1.4,1.4);g.stroke();
+  for(const d of[-6,3]){g.beginPath();g.moveTo(cx+d,cy-10);g.quadraticCurveTo(cx+d+5,cy-15,cx+d,cy-21);g.stroke();}
+  cx=x+w-38;cy=y+52;g.beginPath();g.roundRect(cx-18,cy-14,36,24,9);g.moveTo(cx-6,cy+10);g.lineTo(cx-11,cy+19);g.lineTo(cx+2,cy+10);g.stroke();
+  cx=x+34;cy=y+h-48;g.beginPath();g.roundRect(cx-7,cy-15,14,22,7);g.stroke();g.beginPath();g.arc(cx,cy,12,.2,Math.PI-.2);g.stroke();g.beginPath();g.moveTo(cx,cy+12);g.lineTo(cx,cy+18);g.stroke();
+  cx=x+w-36;cy=y+h-52;g.beginPath();g.arc(cx,cy,11,Math.PI*.85,Math.PI*.15);g.lineTo(cx,cy+20);g.closePath();g.stroke();g.beginPath();g.arc(cx,cy,4,0,7);g.stroke();g.restore();}
+function drawBg(mode){
+  if(mode==='green'){g.fillStyle='#00B140';g.fillRect(0,0,W,H);return;}
+  if(mode!=='split')return;
+  let gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#C98A55');gr.addColorStop(1,'#6E4326');g.fillStyle=gr;g.fillRect(0,0,W/2,H);
+  gr=g.createLinearGradient(W/2,0,W,H);gr.addColorStop(0,'#C9A27F');gr.addColorStop(1,'#F2D9CF');g.fillStyle=gr;g.fillRect(W/2,0,W/2,H);
+  g.fillStyle='rgba(60,30,10,.28)';for(const cx of[W*.25,W*.75]){g.beginPath();g.arc(cx,H*.5,70,0,7);g.fill();g.beginPath();g.ellipse(cx,H*.78,115,140,0,0,7);g.fill();}}
+
+// ------------------------------------------------ timeline for animation/video
+function timing(c){const spw=clamp(+$('spw').value||.45,.2,3),reps=clamp(Math.round(+$('reps').value||1),1,4),n=c.words.length;
+  const start=.5,pass=n*spw,gap=.5,endPasses=start+reps*pass+(reps-1)*gap;const chkT=$('chk').checked?endPasses+.15:null;
+  return{spw,reps,n,start,pass,gap,chkT,dur:endPasses+($('chk').checked?1.3:.8)};}
+function wordAt(c,tm,t){const r=t-tm.start;if(r<0)return-1;const per=tm.pass+tm.gap,k=Math.floor(r/per);if(k>=tm.reps)return-1;const inPass=r-k*per;if(inPass>=tm.pass)return-1;return Math.floor(inPass/tm.spw);}
+function frame(i,t,opts){g.setTransform(K,0,0,K,0,0);g.clearRect(0,0,W,H);const c=cards[i];if(!c)return;
+  if(opts.bg)drawBg(opts.bg);const tm=timing(c);
+  drawCard(c,t,{y:+$('pos').value,anim:opts.anim,word:opts.anim?wordAt(c,tm,t):-1,chkT:opts.anim?tm.chkT:null});}
+
+// ------------------------------------------------ UI
+let playing=0;
+function render(){frame(cur,0,{bg:$('bg').value,anim:false});}
+function rebuild(){cards=src.value.split('\n').map(parse).filter(Boolean);if(cur>=cards.length)cur=Math.max(0,cards.length-1);
+  list.replaceChildren(...cards.map((c,i)=>{const b=document.createElement('button');b.className='item';b.type='button';b.setAttribute('aria-current',i===cur);
+    const n=document.createElement('span');n.className='num';n.textContent=String(i+1).padStart(2,'0');
+    const t=document.createElement('span');const es=document.createElement('div');es.className='es';es.textContent=c.es;const en=document.createElement('div');en.className='en';en.textContent=(c.en||'— no English')+(c.pr?'  ·  '+c.pr:'');t.append(es,en);
+    const ch=document.createElement('span');ch.className='chip'+(c.matched&&c.pr&&c.en?'':' warn');ch.textContent=!c.pr?'no /pron/':!c.en?'no (English)':c.matched?'ok':'words ≠ chunks';
+    b.append(n,t,ch);b.onclick=()=>{cur=i;rebuild();};return b;}));
+  render();try{localStorage.setItem('scpc-src',src.value);}catch(e){}}
+src.addEventListener('input',rebuild);['bg','pos','spw','reps','chk'].forEach(id=>$(id).addEventListener('input',render));
+$('play').onclick=()=>{if(!cards[cur])return;const t0=performance.now(),id=++playing,tm=timing(cards[cur]);
+  const loop=n=>{if(id!==playing)return;const t=(n-t0)/1000;frame(cur,t,{bg:$('bg').value,anim:true});if(t<tm.dur)requestAnimationFrame(loop);else render();};requestAnimationFrame(loop);};
+function say(msg,ok){statusEl.textContent=msg;statusEl.className='status'+(ok?' ok':'');}
+async function save(filename,data){try{const a=document.createElement('a');a.href=URL.createObjectURL(data);a.download=filename;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);say('Saved '+filename,true);return true;}catch(e){say('Could not save the file.');return false;}}
+const pngBlob=()=>new Promise(r=>cv.toBlob(r,'image/png'));
+$('png').onclick=async()=>{if(!cards[cur])return;playing++;frame(cur,0,{bg:$('bg').value==='green'?'green':null});const b=await pngBlob();render();await save(slug(cards[cur],cur)+'.png',b);};
+$('zip').onclick=async()=>{if(!cards.length)return;playing++;const z=new JSZip();for(let i=0;i<cards.length;i++){frame(i,0,{bg:$('bg').value==='green'?'green':null});z.file(slug(cards[i],i)+'.png',await pngBlob());}
+  render();await save('speakcity_phrase_cards.zip',await z.generateAsync({type:'blob'}));};
+$('webm').onclick=async()=>{const c=cards[cur];if(!c)return;if(!window.MediaRecorder){say('This browser cannot record video.');return;}
+  const types=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'],type=types.find(t=>MediaRecorder.isTypeSupported(t))||'';const ext=type.includes('mp4')?'mp4':'webm';
+  const bgm=$('bg').value==='green'?'green':null,btns=['png','webm','zip','play'].map($);btns.forEach(b=>b.disabled=true);playing++;
+  const stream=cv.captureStream(30),rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:12e6}),chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+  const done=new Promise(r=>rec.onstop=r);const tm=timing(c);frame(cur,0,{bg:bgm,anim:true});rec.start(250);const t0=performance.now();say('Recording '+tm.dur.toFixed(1)+' s…');
+  await new Promise(res=>{const loop=n=>{const t=(n-t0)/1000;frame(cur,Math.min(t,tm.dur),{bg:bgm,anim:true});if(t<tm.dur+.1)requestAnimationFrame(loop);else res();};requestAnimationFrame(loop);});
+  rec.stop();await done;btns.forEach(b=>b.disabled=false);render();await save(slug(c,cur)+'.'+ext,new Blob(chunks,{type:type||'video/webm'}));};
+
+let saved=null;try{saved=localStorage.getItem('scpc-src');}catch(e){}
+src.value=saved||SAMPLE;
+Promise.all([document.fonts.load(`800 20px ${F}`),document.fonts.load(`italic 600 20px ${F}`),new Promise(r=>{if(logo.complete)r();else logo.onload=logo.onerror=r;})]).catch(()=>{}).then(rebuild);
+rebuild();
+</script>
+</body>
+</html>
