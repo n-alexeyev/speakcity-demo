@@ -34,6 +34,10 @@ canvas{width:100%;height:100%;display:block;touch-action:none;user-select:none;-
 #panel button{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:800;cursor:pointer}
 #panel button.ghost{background:transparent;color:var(--accent)}
 #panel .note{font-size:12.5px;opacity:.7;line-height:1.4}
+#panel .tabs{display:flex;gap:6px}
+#panel .tabs a{font:800 13px 'Public Sans',sans-serif;padding:7px 12px;border-radius:99px;border:1px solid var(--line);color:var(--ink);text-decoration:none}
+#panel .tabs a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+#panel .tabs a:focus-visible{outline:2px solid #2F7FD8;outline-offset:1px}
 #panel button:focus-visible,#panel select:focus-visible,.fab:focus-visible{outline:2px solid #2F7FD8;outline-offset:1px}
 .fab{display:none;position:fixed;z-index:20;width:46px;height:46px;border-radius:23px;border:0;background:rgba(29,29,31,.55);color:#fff;font-size:22px;line-height:46px;text-align:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer}
 #gear{right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}
@@ -64,6 +68,7 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
   <div id="sheetBg"></div>
   <div id="panel" role="dialog" aria-label="Demo settings">
     <button id="close" aria-label="Close settings">✕</button>
+    <nav class="tabs" aria-label="Demo sections"><a href="index.html" aria-current="page">City demo</a><a href="cards.html">Phrase cards</a></nav>
     <h1>Speak City · demo</h1>
     <label>Mode<select id="s_mode"><option value="auto">Auto video</option><option value="play">Play: tap buildings</option><option value="score">Score card</option></select></label>
     <label>Character<select id="s_char"><option value="ana">Ana</option><option value="leo">Leo</option></select></label>
@@ -91,6 +96,7 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
  if(!can||window.navigator.standalone)fs.style.display='none';
  else fs.onclick=()=>{const d=document;if(d.fullscreenElement||d.webkitFullscreenElement)(d.exitFullscreen||d.webkitExitFullscreen).call(d);else can.call(el).catch?.(()=>{});};})();
 </script>
+<script src="modules/coach.js"></script><!-- coach hook: optional module (drill, 3-min timer, score card, ad shots); remove this line to switch it off -->
 <script>
 'use strict';
 // ============================================================ config
@@ -539,7 +545,8 @@ function draw(){if(CFG.mode==='score'&&SC.ready){drawScore();return;}g.setTransf
     items.push({d:hero.x+hero.y+.05,f:drawHero});items.sort((a,b)=>a.d-b.d).forEach(i=>i.f());
     drawVignette();drawPins();drawBubble();drawHUD();drawHint();}
   else drawScene();
-  drawFlyers();drawIris();drawPass();drawBanner();drawEnd();}
+  drawFlyers();drawIris();drawPass();drawBanner();drawEnd();
+  if(window.SCX)SCX.overlay();} // coach hook
 
 
 // ============================================================ score card mode (attempts → transcript → retry → new district unlocked)
@@ -647,7 +654,7 @@ async function saveRecording(){const type=recorder.mimeType||'video/webm';const 
 window.stepFrame=(dt=1/30)=>{update(CFG.mode==='score'?dt*SPEED:dt);draw();};
 window.grab=(q=.9)=>cv.toDataURL('image/jpeg',q);
 Promise.all(loads).then(()=>Promise.all(['400 16px "Public Sans"','600 16px "Public Sans"','800 16px "Public Sans"','700 16px "Space Mono"'].map(f=>document.fonts.load(f).catch(()=>0)))).then(()=>{
-  makePatterns();if(CFG.mode==='score')prepScoreCity();spawn(CFG.mode==='play'?playDirector():CFG.mode==='score'?scoreDirector():director());startRecording();window.__ready=true;
+  makePatterns();if(CFG.mode==='score')prepScoreCity();spawn((window.SCX&&SCX.boot())||(CFG.mode==='play'?playDirector():CFG.mode==='score'?scoreDirector():director()));startRecording();window.__ready=true; // coach hook (boot)
   if(!CFG.capture){let last=performance.now();const loop=t=>{const dt=Math.min(.05,(t-last)/1000);last=t;update(CFG.mode==='score'?dt*SPEED:dt);draw();if(!window.__done||CFG.mode==='play')requestAnimationFrame(loop);else if(recorder){setTimeout(()=>recorder.stop(),400);}else setTimeout(()=>location.reload(),1800);};requestAnimationFrame(loop);}});
 </script>
 </body>
