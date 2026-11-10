@@ -34,8 +34,8 @@ canvas{width:100%;height:100%;display:block;touch-action:none;user-select:none;-
 #panel button{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:800;cursor:pointer}
 #panel button.ghost{background:transparent;color:var(--accent)}
 #panel .note{font-size:12.5px;opacity:.7;line-height:1.4}
-#panel .tabs{display:flex;gap:6px}
-#panel .tabs a{font:800 13px 'Public Sans',sans-serif;padding:7px 12px;border-radius:99px;border:1px solid var(--line);color:var(--ink);text-decoration:none}
+#panel .tabs{display:flex;flex-wrap:wrap;gap:6px}
+#panel .tabs a{font:800 13px 'Public Sans',sans-serif;padding:7px 11px;white-space:nowrap;border-radius:99px;border:1px solid var(--line);color:var(--ink);text-decoration:none}
 #panel .tabs a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 #panel .tabs a:focus-visible{outline:2px solid #2F7FD8;outline-offset:1px}
 #panel button:focus-visible,#panel select:focus-visible,.fab:focus-visible{outline:2px solid #2F7FD8;outline-offset:1px}
@@ -68,8 +68,8 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
   <div id="sheetBg"></div>
   <div id="panel" role="dialog" aria-label="Demo settings">
     <button id="close" aria-label="Close settings">✕</button>
-    <nav class="tabs" aria-label="Demo sections"><a href="index.html" aria-current="page">City demo</a><a href="cards.html">Phrase cards</a></nav>
-    <h1>Speak City · demo</h1>
+    <nav class="tabs" aria-label="Demo sections"><a href="index.html" id="tab_city" aria-current="page">City demo</a><a href="index.html?mode=score" id="tab_ads">Ad shots</a><a href="cards.html">Phrase cards</a></nav>
+    <h1 id="title">Speak City · demo</h1>
     <label>Mode<select id="s_mode"><option value="auto">Auto video</option><option value="play">Play: tap buildings</option><option value="score">Score card</option></select></label>
     <label>Character<select id="s_char"><option value="ana">Ana</option><option value="leo">Leo</option></select></label>
     <label>Café barista<select id="s_barista"><option value="lucia">Lucía (female)</option><option value="lucas">Lucas (male)</option></select></label>
@@ -104,6 +104,11 @@ const Q=new URLSearchParams(location.search);
 let SPEED=parseFloat(Q.get('speed')||'1')||1;
 const CFG={scores:Q.get('scores')||'14,18,23',taps:Q.get('taps')!=='0',scorebg:Q.get('bg')==='green'?'green':'city',district:Q.get('district')||'Aeropuerto',barista:Q.get('barista')==='lucas'?'lucas':'lucia',rec:Q.has('rec'),mode:Q.get('mode')||'auto',char:Q.get('char')||'ana',lang:Q.get('lang')||'es',capture:Q.has('capture'),brand:Q.get('brand')||'Speak City',city:Q.get('city')||'Valmoreda'};
 if(CFG.capture)document.body.classList.add('capture');
+// tabs: City demo = auto/play, Ad shots = score card + coach ad shots
+const CITY_MODES=['auto','play'],ADS=!CITY_MODES.includes(CFG.mode);
+{const s=document.getElementById('s_mode');[...s.options].forEach(o=>{if(CITY_MODES.includes(o.value)===ADS)o.remove();});
+ document.getElementById('tab_city').toggleAttribute('aria-current',false);document.getElementById(ADS?'tab_ads':'tab_city').setAttribute('aria-current','page');
+ if(ADS)document.getElementById('title').textContent='Speak City · ad shots';}
 document.getElementById('s_char').value=CFG.char;document.getElementById('s_mode').value=CFG.mode;document.getElementById('s_barista').value=CFG.barista;
 {const sl=document.getElementById('s_speed'),sv=document.getElementById('spv');sl.value=SPEED;sv.textContent='×'+SPEED.toFixed(1);sl.oninput=()=>{SPEED=parseFloat(sl.value);sv.textContent='×'+SPEED.toFixed(1);};}document.getElementById('s_lang').value=CFG.lang;
 const $id=id=>document.getElementById(id);
@@ -114,9 +119,9 @@ $id('restart').onclick=()=>{location.search=buildParams(false);};
 $id('s_scores').value=CFG.scores.split(/[^0-9]+/).filter(Boolean).join(', ');$id('s_district').value=CFG.district;$id('s_scorebg').value=CFG.scorebg;$id('s_taps').checked=CFG.taps;
 $id('s_att').value=String(Math.min(3,Math.max(1,CFG.scores.split(/[^0-9]+/).filter(Boolean).length)));
 $id('s_att').onchange=e=>{$id('s_scores').value={1:'23',2:'14, 23',3:'14, 18, 23'}[e.target.value];};
-function syncModeUI(){const m=$id('s_mode').value,sc=m==='score';$id('scoreOpts').hidden=!sc;['s_char','s_barista','s_lang'].forEach(i=>$id(i).closest('label').hidden=sc);
+function syncModeUI(){const m=$id('s_mode').value,sc=m==='score',cta=m.startsWith('cta-');$id('scoreOpts').hidden=!sc;['s_char','s_barista','s_lang'].forEach(i=>$id(i).closest('label').hidden=sc||(cta&&i==='s_barista'));
   $id('spl').textContent=sc?'Animation speed':'Walk speed';$id('render').hidden=m==='play';
-  $id('recstat').textContent=sc?'Renders the score card in real time (about 10–15 s, 1080×1920) and saves it as a file.':'Renders the auto video in real time (about 60 s, 1080×1920) and saves it as a file. Keep the screen on while it records.';}
+  $id('recstat').textContent=sc?'Renders the score card in real time (about 10–15 s, 1080×1920) and saves it as a file.':cta?'Renders this ad shot in real time (a few seconds, 1080×1920) and saves it as a file. The café barista in ad shots is always Lucas.':'Renders the auto video in real time (about 60 s, 1080×1920) and saves it as a file. Keep the screen on while it records.';}
 $id('s_mode').onchange=syncModeUI;syncModeUI();
 const W=540,H=960,cv=document.getElementById('c'),g=cv.getContext('2d');
 const DPR=(CFG.capture||CFG.rec)?2:Math.min(2,devicePixelRatio||1);cv.width=W*DPR;cv.height=H*DPR;

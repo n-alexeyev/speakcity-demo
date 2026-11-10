@@ -10,7 +10,7 @@
 //  3. Honest score card after a conversation: score /30, three sub-scores,
 //     transcript with the weak words marked, Retry and Continue buttons.
 //     Each Retry climbs 12 → 19 → 27.
-//  4. NPC names from the brief: café Lucas, pharmacy Emilio, ticket kiosk Imma.
+//  4. NPC names from the brief: café Lucas (ad shots; play mode keeps the panel's barista), pharmacy Emilio, ticket kiosk Imma.
 //  5. Auto "shots" for the ad (record with Render video, or capture.py):
 //       ?mode=cta-score   plaza + score card climbing 12 → 19 → 27   (0:51)
 //       ?mode=cta-cuts    walking into café / pharmacy / ticket kiosk (0:58)
@@ -51,7 +51,7 @@ const TIP={es:'Tip: “¿Me pones un café con leche?” sounds more local than 
 const X={drill:null,timer:null,card:null,clock:null,climb:null,tries:0,btns:[]};
 const lang=()=>(typeof CFG!=='undefined'&&DRILL[CFG.lang])?CFG.lang:'es';
 
-function applyNames(){for(const[k,n]of Object.entries(NAMES))if(STOPS[k])STOPS[k].npc=n;STOPS.kiosk.label='Tickets';EMO.kiosk='🎟️';}
+function applyNames(){for(const[k,n]of Object.entries(NAMES))if(STOPS[k]&&(k!=='cafe'||CFG.barista==='lucas'))STOPS[k].npc=n;STOPS.kiosk.label='Tickets';EMO.kiosk='🎟️';}
 function loadLucas(){CFG.barista='lucas';return new Promise(r=>{const i=new Image();i.onload=()=>{IMG.cafe_npc=i;r();};i.onerror=()=>r();i.src='assets/sc/cafe_npc_lucas.png';});}
 function buildCity(){for(const b of B){b.t0=-9;b.landed=true;}pinsT0=-9;hud.show=-9;}
 
@@ -201,11 +201,12 @@ function tapHandler(e){if(!X.card||!X.card.interactive||now-X.card.t0<.5)return;
 
 // ------------------------------------------------------------------ public API (called from the demo's hooks)
 window.SCX={
-  boot(){if(SHOTS[MODE]||MODE==='play')applyNames();
+  boot(){if(SHOTS[MODE])CFG.barista='lucas';  // ad shots always use Lucas; play mode keeps the barista picked in the panel
+    if(SHOTS[MODE]||MODE==='play')applyNames();
     if(SHOTS[MODE]){const rb=document.getElementById('render');rb.hidden=false;rb.onclick=()=>{const p=new URLSearchParams(location.search);p.set('mode',document.getElementById('s_mode').value);p.set('rec','1');p.set('lang',document.getElementById('s_lang').value);location.search=p.toString();};
       const gen={'cta-score':shotScore,'cta-cuts':shotCuts,'cta-timer':shotTimer,'cta-drill':shotDrill}[MODE];
       return(function*(){let ok=false;loadLucas().then(()=>ok=true);while(!ok)yield;yield* gen();})();}
-    if(MODE==='play'){loadLucas();cv.addEventListener('pointerdown',tapHandler,true);enterScene=enterSceneCoach;}
+    if(MODE==='play'){if(CFG.barista==='lucas')loadLucas();cv.addEventListener('pointerdown',tapHandler,true);enterScene=enterSceneCoach;}
     return null;},
   overlay(){drawDrill();drawTimer();drawClimb();drawClock();drawScoreCard();},
   state:X};

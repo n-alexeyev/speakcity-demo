@@ -31,8 +31,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;
 header{max-width:1180px;margin:0 auto 16px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
 h1{font-size:22px;font-weight:800;margin:0;text-wrap:balance}
 header p{margin:0;color:var(--mute);font-size:14px}
-.tabs{max-width:1180px;margin:0 auto 14px;display:flex;gap:6px}
-.tabs a{font:800 14px var(--ui);padding:8px 14px;border-radius:99px;border:1px solid var(--line);color:var(--ink);text-decoration:none;background:var(--panel)}
+.tabs{max-width:1180px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:6px}
+.tabs a{font:800 14px var(--ui);padding:8px 14px;white-space:nowrap;border-radius:99px;border:1px solid var(--line);color:var(--ink);text-decoration:none;background:var(--panel)}
 .tabs a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .tabs a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -69,7 +69,7 @@ button.b:disabled{opacity:.5;cursor:default}
 </head>
 <body>
 
-<nav class="tabs" aria-label="Demo sections"><a href="index.html">City demo</a><a href="cards.html" aria-current="page">Phrase cards</a></nav>
+<nav class="tabs" aria-label="Demo sections"><a href="index.html">City demo</a><a href="index.html?mode=score">Ad shots</a><a href="cards.html" aria-current="page">Phrase cards</a></nav>
 <header>
   <h1>Speak City Phrase Cards</h1>
   <p>One line per card. The Spanish word being spoken lights up yellow in the video export.</p>
