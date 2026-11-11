@@ -71,7 +71,7 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
     <nav class="tabs" aria-label="Demo sections"><a href="index.html" id="tab_city" aria-current="page">City demo</a><a href="index.html?mode=score" id="tab_ads">Ad shots</a><a href="cards.html">Phrase cards</a></nav>
     <h1 id="title">Speak City · demo</h1>
     <label>Mode<select id="s_mode"><option value="auto">Auto video</option><option value="play">Play: tap buildings</option><option value="score">Score card</option></select></label>
-    <label>Character<select id="s_char"><option value="ana">Ana</option><option value="leo">Leo</option></select></label>
+    <label>Character<select id="s_char"><option value="ana">Ana</option><option value="leo">Leo</option><option value="ana_rabbit">Ana (Rabbit)</option><option value="leo_rabbit">Leo (Rabbit)</option></select></label>
     <label>Café barista<select id="s_barista"><option value="lucia">Lucía (female)</option><option value="lucas">Lucas (male)</option></select></label>
     <label>Dialogue language<select id="s_lang"><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="de">German</option></select></label>
     <div id="scoreOpts" hidden>
@@ -104,6 +104,10 @@ const Q=new URLSearchParams(location.search);
 let SPEED=parseFloat(Q.get('speed')||'1')||1;
 const CFG={scores:Q.get('scores')||'14,18,23',taps:Q.get('taps')!=='0',scorebg:Q.get('bg')==='green'?'green':'city',district:Q.get('district')||'Aeropuerto',barista:Q.get('barista')==='lucas'?'lucas':'lucia',rec:Q.has('rec'),mode:Q.get('mode')||'auto',char:Q.get('char')||'ana',lang:Q.get('lang')||'es',capture:Q.has('capture'),brand:Q.get('brand')||'Speak City',city:Q.get('city')||'Valmoreda'};
 if(CFG.capture)document.body.classList.add('capture');
+// characters: walk = 4-frame strip in assets/walk, idle = optional standing pose, hs = height scale (rabbit ears sit above the head line), still = walk frame used when standing without an idle pose
+const CHARS={ana:{name:'Ana',walk:'ana',idle:'ana',avatar:'avatar_ana.jpg'},leo:{name:'Leo',walk:'leo',idle:'leo',avatar:'avatar_leo.jpg'},
+  ana_rabbit:{name:'Ana',walk:'ana_rabbit',avatar:'avatar_ana_rabbit.jpg',hs:1.14,still:1},leo_rabbit:{name:'Leo',walk:'leo_rabbit',avatar:'avatar_leo_rabbit.jpg',hs:1.1,still:1}};
+if(!CHARS[CFG.char])CFG.char='ana';const CH=CHARS[CFG.char];
 // tabs: City demo = auto/play, Ad shots = score card + coach ad shots
 const CITY_MODES=['auto','play'],ADS=!CITY_MODES.includes(CFG.mode);
 {const s=document.getElementById('s_mode');[...s.options].forEach(o=>{if(CITY_MODES.includes(o.value)===ADS)o.remove();});
@@ -179,9 +183,9 @@ new Set(Object.values(SPR)).forEach(n=>loads.push(load(n,'sp/'+n+'.png')));
 ['cafe','pharmacy','kiosk'].forEach(n=>{loads.push(load(n+'_bg','sc/'+n+'_bg.jpg'));loads.push(load(n+'_npc','sc/'+n+'_npc'+(n==='cafe'&&CFG.barista==='lucas'?'_lucas':'')+'.png'));});
 if(CFG.barista==='lucas')STOPS.cafe.npc='Lucas';
 loads.push(load('logo','logo.png'));
-loads.push(load('avatar','avatar_'+(CFG.char==='leo'?'leo':'ana')+'.jpg'));
-loads.push(load('idle','idle/'+(CFG.char==='leo'?'leo':'ana')+'.png'));
-loads.push(load('walker','walk/'+(CFG.char==='leo'?'leo':'ana')+'.png'));
+loads.push(load('avatar',CH.avatar));
+if(CH.idle)loads.push(load('idle','idle/'+CH.idle+'.png'));
+loads.push(load('walker','walk/'+CH.walk+'.png'));
 let PAT={};
 function makePatterns(){
   const mk=(img,filter)=>{const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');x.filter=filter||'none';x.drawImage(img,0,0);return g.createPattern(c,'repeat');};
@@ -393,9 +397,9 @@ function drawBlock(b){const img=IMG[SPR[b.t]];if(!img)return;
   if(b.glow){const d=P(...doorPt(b,0),.5);const gr=g.createRadialGradient(d[0],d[1],2,d[0],d[1],40*cam.z);gr.addColorStop(0,'rgba(255,220,140,.7)');gr.addColorStop(1,'rgba(255,220,140,0)');g.fillStyle=gr;g.fillRect(d[0]-60,d[1]-60,120,120);}
   if(b.t==='tasca'&&now>unlockT){const t=(now-unlockT);g.save();g.globalCompositeOperation='lighter';g.globalAlpha=.35*Math.max(0,Math.sin(Math.min(t,3)*3.14/3));g.translate(r.cx,r.by);g.drawImage(img,-r.sw/2,-r.sh,r.sw,r.sh);g.restore();}}
 function drawHero(){if(!hero.visible)return;const img=IMG.walker;if(!img)return;const fw=img.width/4;
-  const a=clamp((now-hero.t0)/.5),pop=eBack(a);const p=P(hero.x,hero.y);const h=TW*(CFG.mode==='play'?1.9:1.55)*cam.z*pop,w=h*fw/img.height;
+  const a=clamp((now-hero.t0)/.5),pop=eBack(a);const p=P(hero.x,hero.y);const h=TW*(CFG.mode==='play'?1.9:1.55)*cam.z*pop*(CH.hs||1),w=h*fw/img.height;
   g.save();g.globalAlpha=.22*hero.alpha;g.fillStyle='#2a1a0a';g.beginPath();g.ellipse(p[0],p[1],w*.32,w*.12,0,0,7);g.fill();g.restore();
-  const fr=hero.moving?Math.floor(hero.phase)%4:0;const bob=hero.moving?Math.abs(Math.sin(hero.phase*1.57))*h*.012:0;
+  const fr=hero.moving?Math.floor(hero.phase)%4:(CH.still||0);const bob=hero.moving?Math.abs(Math.sin(hero.phase*1.57))*h*.012:0;
   g.save();g.globalAlpha=hero.alpha;g.translate(p[0],p[1]-bob);if(hero.flip)g.scale(-1,1);
   const idle=IMG.idle;if(!hero.moving&&idle){const br=1+Math.sin(now*2.4)*.006,ih=h*.97*br,iw=ih*idle.width/idle.height;g.drawImage(idle,-iw/2,-ih,iw,ih);}
   else g.drawImage(img,fr*fw,0,fw,img.height,-w/2,-h,w,h);g.restore();}
@@ -529,7 +533,7 @@ function drawPass(){if(!pass)return;const tin=eBack(clamp((now-pass.t0)/.5)),tou
   g.fillStyle=C.terra;g.font=`800 26px ${FONT}`;g.textAlign='center';g.fillText('✈',x+w/2,y+112);
   g.strokeStyle='#E4D6BD';g.setLineDash([8,6]);g.lineWidth=2;g.beginPath();g.moveTo(x+18,y+170);g.lineTo(x+w-18,y+170);g.stroke();g.setLineDash([]);
   g.fillStyle=C.mute;g.font=`400 12px ${MONO}`;g.textAlign='left';g.fillText('PASSENGER',x+24,y+195);g.textAlign='right';g.fillText('LEARNING',x+w-24,y+195);
-  g.fillStyle=C.ink;g.font=`800 19px ${FONT}`;g.textAlign='left';g.fillText(CFG.char==='leo'?'Leo':'Ana',x+24,y+222);g.textAlign='right';g.fillText(L.name,x+w-24,y+222);g.restore();}
+  g.fillStyle=C.ink;g.font=`800 19px ${FONT}`;g.textAlign='left';g.fillText(CH.name,x+24,y+222);g.textAlign='right';g.fillText(L.name,x+w-24,y+222);g.restore();}
 function drawBanner(){if(!banner)return;const t=eBack(clamp((now-banner.t0)/.45));g.save();g.translate(W/2,H*.2);g.scale(t,t);g.shadowColor='rgba(0,0,0,.2)';g.shadowBlur=20;
   g.fillStyle=C.terra;rr(-195,-40,390,80,24);g.fill();g.shadowBlur=0;g.fillStyle='rgba(255,255,255,.85)';g.font=`700 12px ${MONO}`;g.textAlign='center';g.textBaseline='middle';g.fillText('LESSON 6 UNLOCKED',0,-14);
   g.fillStyle='#fff';g.font=`800 24px ${FONT}`;g.fillText('Next stop: '+STOPS.tasca.label,0,15);g.restore();}
