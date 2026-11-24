@@ -73,7 +73,7 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
     <label>Mode<select id="s_mode"><option value="auto">Auto video</option><option value="play">Play: tap buildings</option><option value="score">Score card</option></select></label>
     <label>Character<select id="s_char"><option value="ana">Ana</option><option value="leo">Leo</option><option value="ana_rabbit">Ana (Rabbit)</option><option value="leo_rabbit">Leo (Rabbit)</option></select></label>
     <label>Café barista<select id="s_barista"><option value="lucia">Lucía (female)</option><option value="lucas">Lucas (male)</option></select></label>
-    <label>Dialogue language<select id="s_lang"><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="de">German</option><option value="pt">Portuguese (Portugal)</option><option value="pt-br">Portuguese (Brazil)</option></select></label>
+    <label>Dialogue language<select id="s_lang"><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="de">German</option><option value="pt">Portuguese (Portugal)</option><option value="pt-br">Portuguese (Brazil)</option><option value="en-us">English (US)</option><option value="en-gb">English (UK)</option></select></label>
     <div id="scoreOpts" hidden>
       <label>Attempts<select id="s_att"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
       <label>Scores (out of 25)<input id="s_scores" type="text" inputmode="numeric" autocomplete="off"></label>
@@ -168,7 +168,13 @@ const LANG={
   pharmacy:[['Boa tarde. Em que posso ajudar?','Algo para as dores de cabeça.']],kiosk:[['O que deseja?','Um jornal e uma água, por favor.']],tasca:[['O que vão beber?','Uns petiscos e um copo de tinto, por favor.']]},
  'pt-br':{name:'Brazilian Portuguese',taxi:[['São doze reais.','Aqui está. Obrigad{o/a}!']],stall:[['O que vai levar?','Um quilo de laranjas, por favor.']],
   cafe:[['Oi! O que vai querer?','Um café com leite, por favor.'],['Mais alguma coisa?','Sim, um pão de queijo, obrigad{o/a}.']],
-  pharmacy:[['Boa tarde. Posso ajudar?','Alguma coisa para dor de cabeça.']],kiosk:[['O que você deseja?','Um jornal e uma água, por favor.']],tasca:[['O que vocês vão pedir?','Uns petiscos e um vinho tinto, por favor.']]}};
+  pharmacy:[['Boa tarde. Posso ajudar?','Alguma coisa para dor de cabeça.']],kiosk:[['O que você deseja?','Um jornal e uma água, por favor.']],tasca:[['O que vocês vão pedir?','Uns petiscos e um vinho tinto, por favor.']]},
+ 'en-us':{name:'American English',taxi:[['That’ll be twelve dollars.','Here you go. Thanks!']],stall:[['What can I get you?','A pound of oranges, please.']],
+  cafe:[['Hi! What can I get for you?','A latte, please.'],['Anything else?','Yeah, a blueberry muffin, thanks.']],
+  pharmacy:[['Hi there. How can I help you?','Something for a headache, please.']],kiosk:[['What can I get you?','A newspaper and a bottle of water.']],tasca:[['What’ll it be?','Some appetizers and a glass of red, please.']]},
+ 'en-gb':{name:'British English',taxi:[['That’s twelve pounds, please.','Here you are. Cheers!']],stall:[['What can I get you, love?','A kilo of oranges, please.']],
+  cafe:[['Hiya! What can I get you?','A flat white, please.'],['Anything else?','Yes, a scone, thanks.']],
+  pharmacy:[['Afternoon. How can I help?','Something for a headache, please.']],kiosk:[['What would you like?','A newspaper and a bottle of water, please.']],tasca:[['What are you having?','A pint and some crisps, please.']]}};
 // {o/a}: word ending that follows the speaker's gender (Portuguese obrigado / obrigada)
 const L=JSON.parse(JSON.stringify(LANG[CFG.lang]||LANG.es).replace(/\{(\w*)\/(\w*)\}/g,(m,a,b)=>CH.f?b:a));
 
@@ -343,7 +349,13 @@ const FLAGS={es:{t:'h',s:[['#C60B1E',1],['#FFC400',2],['#C60B1E',1]]},fr:{t:'v',
    shape(circ(.4,.5,.26),'#FFE000');shape(circ(.4,.5,.2),'#046A38');shape(shield(.4,.5,.15,.18),'#DA291C');shape(shield(.4,.5,.1,.12),'#FFFFFF');
    for(const[du,dv]of[[0,-.06],[-.045,0],[0,0],[.045,0],[0,.06]])shape(circ(.4+du*k,.5+dv,.022,8),'#003399');}},
  'pt-br':{t:'h',s:[['#009C3B',1]],em:(shape,circ)=>{shape([[.085,.5],[.5,.12],[.915,.5],[.5,.88]],'#FFDF00');shape(circ(.5,.5,.25),'#002776');
-   const band=[];for(let i=0;i<=12;i++){const t=-.9+1.8*i/12;band.push([.5+t*.25*40/62,.555-.075*(1-t*t)]);}for(let i=12;i>=0;i--){const t=-.9+1.8*i/12;band.push([.5+t*.25*40/62,.51-.075*(1-t*t)]);}shape(band,'#FFFFFF');}}};
+   const band=[];for(let i=0;i<=12;i++){const t=-.9+1.8*i/12;band.push([.5+t*.25*40/62,.555-.075*(1-t*t)]);}for(let i=12;i>=0;i--){const t=-.9+1.8*i/12;band.push([.5+t*.25*40/62,.51-.075*(1-t*t)]);}shape(band,'#FFFFFF');}},
+ 'en-us':{t:'h',s:Array.from({length:13},(_,i)=>[i%2?'#FFFFFF':'#B22234',1]),em:(shape,circ)=>{shape([[0,0],[.4,0],[.4,7/13],[0,7/13]],'#3C3B6E');
+   for(let r=0;r<5;r++)for(let c=0;c<6;c++)shape(circ(.035+c*.066+(r%2)*.033,.06+r*.105,.022,5),'#FFFFFF');}},
+ 'en-gb':{t:'h',s:[['#012169',1]],em:(shape)=>{const k=40/62,diag=(a,b,t)=>[[a[0],a[1]-t],[b[0],b[1]-t],[b[0],b[1]+t],[a[0],a[1]+t]];
+   shape(diag([0,0],[1,1],.12),'#FFFFFF');shape(diag([0,1],[1,0],.12),'#FFFFFF');shape(diag([0,0],[1,1],.045),'#C8102E');shape(diag([0,1],[1,0],.045),'#C8102E');
+   shape([[0,.33],[1,.33],[1,.67],[0,.67]],'#FFFFFF');shape([[.5-.17*k,0],[.5+.17*k,0],[.5+.17*k,1],[.5-.17*k,1]],'#FFFFFF');
+   shape([[0,.4],[1,.4],[1,.6],[0,.6]],'#C8102E');shape([[.5-.1*k,0],[.5+.1*k,0],[.5+.1*k,1],[.5-.1*k,1]],'#C8102E');}}};
 const POLE={x:FC[0]+.35,y:FC[1]+5.0};
 function drawFlagpole(){const a=clamp((now-FOUNT.t0-.3)/.6);if(a<=0)return;const s=eBack(a);
   const b=P(POLE.x,POLE.y),hgt=4.2*s,t=P(POLE.x,POLE.y,hgt),k=cam.z;
@@ -358,8 +370,10 @@ function drawFlagpole(){const a=clamp((now-FOUNT.t0-.3)/.6);if(a<=0)return;const
       const n=parseInt(col.slice(1),16);g.fillStyle=`rgb(${Math.min(255,(n>>16)*L)|0},${Math.min(255,(n>>8&255)*L)|0},${Math.min(255,(n&255)*L)|0})`;g.fill();};
     if(fl.t==='h'){let acc=0;for(const[col,w]of fl.s){band(col,acc/tot,(acc+w)/tot);acc+=w;}}
     else{let acc=0,col=fl.s[0][0];for(const[cc,w]of fl.s){if(u0+.001>=acc/tot)col=cc;acc+=w;}band(col,0,1);}}
-  if(fl.em)fl.em((q,col)=>{g.beginPath();q.forEach(([u,v],i)=>{const p=pt(u,v);i?g.lineTo(...p):g.moveTo(...p);});g.closePath();g.fillStyle=col;g.fill();},
-    (uc,vc,r,n=24)=>Array.from({length:n},(_,i)=>[uc+r*FH/FW*Math.cos(i/n*Math.PI*2),vc+r*Math.sin(i/n*Math.PI*2)]));}
+  if(fl.em){g.save();g.beginPath();  // clip emblems to the waving cloth
+    for(let i=0;i<=cols;i++)g.lineTo(...pt(i/cols,0));for(let i=cols;i>=0;i--)g.lineTo(...pt(i/cols,1));g.closePath();g.clip();
+    fl.em((q,col)=>{g.beginPath();q.forEach(([u,v],i)=>{const p=pt(u,v);i?g.lineTo(...p):g.moveTo(...p);});g.closePath();g.fillStyle=col;g.fill();},
+    (uc,vc,r,n=24)=>Array.from({length:n},(_,i)=>[uc+r*FH/FW*Math.cos(i/n*Math.PI*2),vc+r*Math.sin(i/n*Math.PI*2)]));g.restore();}}
 
 // ============================================================ update
 function update(dt){DT=dt;now+=dt;for(let i=tasks.length-1;i>=0;i--)if(tasks[i].next().done)tasks.splice(i,1);
