@@ -73,7 +73,7 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
     <label>Mode<select id="s_mode"><option value="auto">Auto video</option><option value="play">Play: tap buildings</option><option value="score">Score card</option></select></label>
     <label>Character<select id="s_char"><option value="ana">Ana</option><option value="leo">Leo</option><option value="ana_rabbit">Ana (Rabbit)</option><option value="leo_rabbit">Leo (Rabbit)</option></select></label>
     <label>Café barista<select id="s_barista"><option value="lucia">Lucía (female)</option><option value="lucas">Lucas (male)</option></select></label>
-    <label>Dialogue language<select id="s_lang"><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="de">German</option></select></label>
+    <label>Dialogue language<select id="s_lang"><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="de">German</option><option value="pt">Portuguese (Portugal)</option><option value="pt-br">Portuguese (Brazil)</option></select></label>
     <div id="scoreOpts" hidden>
       <label>Attempts<select id="s_att"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
       <label>Scores (out of 25)<input id="s_scores" type="text" inputmode="numeric" autocomplete="off"></label>
@@ -105,8 +105,8 @@ let SPEED=parseFloat(Q.get('speed')||'1')||1;
 const CFG={scores:Q.get('scores')||'14,18,23',taps:Q.get('taps')!=='0',scorebg:Q.get('bg')==='green'?'green':'city',district:Q.get('district')||'Aeropuerto',barista:Q.get('barista')==='lucas'?'lucas':'lucia',rec:Q.has('rec'),mode:Q.get('mode')||'auto',char:Q.get('char')||'ana',lang:Q.get('lang')||'es',capture:Q.has('capture'),brand:Q.get('brand')||'Speak City',city:Q.get('city')||'Valmoreda'};
 if(CFG.capture)document.body.classList.add('capture');
 // characters: walk = 4-frame strip in assets/walk, idle = optional standing pose, hs = height scale (rabbit ears sit above the head line), still = walk frame used when standing without an idle pose
-const CHARS={ana:{name:'Ana',walk:'ana',idle:'ana',avatar:'avatar_ana.jpg'},leo:{name:'Leo',walk:'leo',idle:'leo',avatar:'avatar_leo.jpg'},
-  ana_rabbit:{name:'Ana',walk:'ana_rabbit',avatar:'avatar_ana_rabbit.jpg',hs:1.14,still:1},leo_rabbit:{name:'Leo',walk:'leo_rabbit',avatar:'avatar_leo_rabbit.jpg',hs:1.1,still:1}};
+const CHARS={ana:{name:'Ana',f:1,walk:'ana',idle:'ana',avatar:'avatar_ana.jpg'},leo:{name:'Leo',walk:'leo',idle:'leo',avatar:'avatar_leo.jpg'},
+  ana_rabbit:{name:'Ana',f:1,walk:'ana_rabbit',avatar:'avatar_ana_rabbit.jpg',hs:1.14,still:1},leo_rabbit:{name:'Leo',walk:'leo_rabbit',avatar:'avatar_leo_rabbit.jpg',hs:1.1,still:1}};
 if(!CHARS[CFG.char])CFG.char='ana';const CH=CHARS[CFG.char];
 // tabs: City demo = auto/play, Ad shots = score card + coach ad shots
 const CITY_MODES=['auto','play'],ADS=!CITY_MODES.includes(CFG.mode);
@@ -162,8 +162,15 @@ const LANG={
   pharmacy:[['Buongiorno. Di cosa ha bisogno?','Qualcosa per il mal di testa.']],kiosk:[['Cosa desidera?','Un giornale e un’acqua, grazie.']],tasca:[['Cosa prendete?','Delle tapas e un rosso, per favore.']]},
  de:{name:'German',taxi:[['Das macht zwölf Euro.','Bitte schön. Danke!']],stall:[['Was darf’s sein?','Ein Kilo Orangen, bitte.']],
   cafe:[['Hallo! Was darf’s sein?','Einen Milchkaffee, bitte.'],['Noch etwas?','Ja, ein Croissant, danke.']],
-  pharmacy:[['Guten Tag. Was brauchen Sie?','Etwas gegen Kopfschmerzen.']],kiosk:[['Was möchten Sie?','Eine Zeitung und Wasser, bitte.']],tasca:[['Was darf ich bringen?','Tapas und einen Rotwein, bitte.']]}};
-const L=LANG[CFG.lang]||LANG.es;
+  pharmacy:[['Guten Tag. Was brauchen Sie?','Etwas gegen Kopfschmerzen.']],kiosk:[['Was möchten Sie?','Eine Zeitung und Wasser, bitte.']],tasca:[['Was darf ich bringen?','Tapas und einen Rotwein, bitte.']]},
+ pt:{name:'Portuguese',taxi:[['São doze euros.','Aqui tem. Obrigad{o/a}!']],stall:[['O que vai ser?','Um quilo de laranjas, por favor.']],
+  cafe:[['Olá! O que vai querer?','Um galão, por favor.'],['Mais alguma coisa?','Sim, um pastel de nata, obrigad{o/a}.']],
+  pharmacy:[['Boa tarde. Em que posso ajudar?','Algo para as dores de cabeça.']],kiosk:[['O que deseja?','Um jornal e uma água, por favor.']],tasca:[['O que vão beber?','Uns petiscos e um copo de tinto, por favor.']]},
+ 'pt-br':{name:'Brazilian Portuguese',taxi:[['São doze reais.','Aqui está. Obrigad{o/a}!']],stall:[['O que vai levar?','Um quilo de laranjas, por favor.']],
+  cafe:[['Oi! O que vai querer?','Um café com leite, por favor.'],['Mais alguma coisa?','Sim, um pão de queijo, obrigad{o/a}.']],
+  pharmacy:[['Boa tarde. Posso ajudar?','Alguma coisa para dor de cabeça.']],kiosk:[['O que você deseja?','Um jornal e uma água, por favor.']],tasca:[['O que vocês vão pedir?','Uns petiscos e um vinho tinto, por favor.']]}};
+// {o/a}: word ending that follows the speaker's gender (Portuguese obrigado / obrigada)
+const L=JSON.parse(JSON.stringify(LANG[CFG.lang]||LANG.es).replace(/\{(\w*)\/(\w*)\}/g,(m,a,b)=>CH.f?b:a));
 
 // ============================================================ utils
 let seed=11;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
@@ -329,7 +336,14 @@ function drawHint(){if(CFG.mode!=='play'||!hint||now<hint||busy||scene)return;co
 
 // ============================================================ flagpole at the fountain (flag follows the dialogue language)
 const FLAGS={es:{t:'h',s:[['#C60B1E',1],['#FFC400',2],['#C60B1E',1]]},fr:{t:'v',s:[['#0055A4',1],['#FFFFFF',1],['#EF4135',1]]},
- it:{t:'v',s:[['#009246',1],['#FFFFFF',1],['#CE2B37',1]]},de:{t:'h',s:[['#111111',1],['#DD0000',1],['#FFCE00',1]]}};
+ it:{t:'v',s:[['#009246',1],['#FFFFFF',1],['#CE2B37',1]]},de:{t:'h',s:[['#111111',1],['#DD0000',1],['#FFCE00',1]]},
+ // em: emblem drawn on top of the stripes; shape(points,colour) fills a polygon in flag units (u across, v down), circ(u,v,r) gives a circle of radius r (in flag heights)
+ pt:{t:'v',s:[['#046A38',2],['#DA291C',3]],em:(shape,circ)=>{const k=40/62,shield=(uc,vc,w,h)=>{const q=[[uc-w*k,vc-h],[uc+w*k,vc-h],[uc+w*k,vc+h*.2]];
+     for(let i=1;i<10;i++){const a=i/10*Math.PI;q.push([uc+w*k*Math.cos(a),vc+h*.2+h*.8*Math.sin(a)]);}q.push([uc-w*k,vc+h*.2]);return q;};
+   shape(circ(.4,.5,.26),'#FFE000');shape(circ(.4,.5,.2),'#046A38');shape(shield(.4,.5,.15,.18),'#DA291C');shape(shield(.4,.5,.1,.12),'#FFFFFF');
+   for(const[du,dv]of[[0,-.06],[-.045,0],[0,0],[.045,0],[0,.06]])shape(circ(.4+du*k,.5+dv,.022,8),'#003399');}},
+ 'pt-br':{t:'h',s:[['#009C3B',1]],em:(shape,circ)=>{shape([[.085,.5],[.5,.12],[.915,.5],[.5,.88]],'#FFDF00');shape(circ(.5,.5,.25),'#002776');
+   const band=[];for(let i=0;i<=12;i++){const t=-.9+1.8*i/12;band.push([.5+t*.25*40/62,.555-.075*(1-t*t)]);}for(let i=12;i>=0;i--){const t=-.9+1.8*i/12;band.push([.5+t*.25*40/62,.51-.075*(1-t*t)]);}shape(band,'#FFFFFF');}}};
 const POLE={x:FC[0]+.35,y:FC[1]+5.0};
 function drawFlagpole(){const a=clamp((now-FOUNT.t0-.3)/.6);if(a<=0)return;const s=eBack(a);
   const b=P(POLE.x,POLE.y),hgt=4.2*s,t=P(POLE.x,POLE.y,hgt),k=cam.z;
@@ -343,7 +357,9 @@ function drawFlagpole(){const a=clamp((now-FOUNT.t0-.3)/.6);if(a<=0)return;const
     const band=(col,v0,v1)=>{const q=[pt(u0,v0),pt(u1+.004,v0),pt(u1+.004,v1),pt(u0,v1)];g.beginPath();q.forEach((p,i)=>i?g.lineTo(...p):g.moveTo(...p));g.closePath();
       const n=parseInt(col.slice(1),16);g.fillStyle=`rgb(${Math.min(255,(n>>16)*L)|0},${Math.min(255,(n>>8&255)*L)|0},${Math.min(255,(n&255)*L)|0})`;g.fill();};
     if(fl.t==='h'){let acc=0;for(const[col,w]of fl.s){band(col,acc/tot,(acc+w)/tot);acc+=w;}}
-    else{let acc=0,col=fl.s[0][0];for(const[cc,w]of fl.s){if(u0+.001>=acc/tot)col=cc;acc+=w;}band(col,0,1);}}}
+    else{let acc=0,col=fl.s[0][0];for(const[cc,w]of fl.s){if(u0+.001>=acc/tot)col=cc;acc+=w;}band(col,0,1);}}
+  if(fl.em)fl.em((q,col)=>{g.beginPath();q.forEach(([u,v],i)=>{const p=pt(u,v);i?g.lineTo(...p):g.moveTo(...p);});g.closePath();g.fillStyle=col;g.fill();},
+    (uc,vc,r,n=24)=>Array.from({length:n},(_,i)=>[uc+r*FH/FW*Math.cos(i/n*Math.PI*2),vc+r*Math.sin(i/n*Math.PI*2)]));}
 
 // ============================================================ update
 function update(dt){DT=dt;now+=dt;for(let i=tasks.length-1;i>=0;i--)if(tasks[i].next().done)tasks.splice(i,1);

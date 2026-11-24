@@ -40,12 +40,14 @@ const DRILL={ // phrase card per dialogue language
  es:{en:'Sounds good',tl:['Vale'],pr:['BAH-leh'],casi:'Casi',ok:'¡Eso!'},
  fr:{en:'Sounds good',tl:["D'accord"],pr:['dah-KOR'],casi:'Presque',ok:'Voilà !'},
  it:{en:'Sounds good',tl:['Va','bene'],pr:['vah','BEH-neh'],casi:'Quasi',ok:'Esatto!'},
- de:{en:'Sounds good',tl:['Alles','klar'],pr:['AH-less','klar'],casi:'Fast',ok:'Genau!'}};
+ de:{en:'Sounds good',tl:['Alles','klar'],pr:['AH-less','klar'],casi:'Fast',ok:'Genau!'},
+ pt:{en:'Sounds good',tl:['Combinado'],pr:['kom-bee-NAH-doo'],casi:'Quase',ok:'Isso!'},
+ 'pt-br':{en:'Sounds good',tl:['Beleza'],pr:['beh-LEH-zah'],casi:'Quase',ok:'Isso aí!'}};
 const NAMES={cafe:'Lucas',pharmacy:'Emilio',kiosk:'Imma'};
 const LADDER=[12,19,27];                      // score climbs with each retry
 const SUB={12:[4,4,4],19:[6,6,7],27:[9,9,9]}; // pronunciation, grammar, fluency (/10)
-const WEAK={es:[['leche','LEH-cheh'],['cruasán','krwah-SAHN']],fr:[['crème','krehm'],['croissant','krwah-SAHN']],it:[['cappuccino','kahp-poo-CHEE-noh'],['cornetto','kor-NET-toh']],de:[['Milchkaffee','MILKH-kah-fay'],['Croissant','krwah-SAHN']]};
-const TIP={es:'Tip: “¿Me pones un café con leche?” sounds more local than “Un café con leche”.',fr:'Tip: “Je vais prendre un café crème” sounds more natural.',it:'Tip: “Mi fa un cappuccino?” sounds more local.',de:'Tip: “Ich hätte gern einen Milchkaffee” sounds more natural.'};
+const WEAK={es:[['leche','LEH-cheh'],['cruasán','krwah-SAHN']],fr:[['crème','krehm'],['croissant','krwah-SAHN']],it:[['cappuccino','kahp-poo-CHEE-noh'],['cornetto','kor-NET-toh']],de:[['Milchkaffee','MILKH-kah-fay'],['Croissant','krwah-SAHN']],pt:[['galão','gah-LOWNG'],['nata','NAH-tah']],'pt-br':[['leite','LAY-chee'],['queijo','KAY-zhoo']]};
+const TIP={es:'Tip: “¿Me pones un café con leche?” sounds more local than “Un café con leche”.',fr:'Tip: “Je vais prendre un café crème” sounds more natural.',it:'Tip: “Mi fa un cappuccino?” sounds more local.',de:'Tip: “Ich hätte gern einen Milchkaffee” sounds more natural.',pt:'Tip: “Queria um galão, se faz favor” sounds more local.','pt-br':'Tip: “Me vê um café com leite?” sounds more local.'};
 
 // ------------------------------------------------------------------ state
 const X={drill:null,timer:null,card:null,clock:null,climb:null,tries:0,btns:[]};
