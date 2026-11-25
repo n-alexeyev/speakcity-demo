@@ -44,12 +44,14 @@ const DRILL={ // phrase card per dialogue language
  pt:{en:'Sounds good',tl:['Combinado'],pr:['kom-bee-NAH-doo'],casi:'Quase',ok:'Isso!'},
  'pt-br':{en:'Sounds good',tl:['Beleza'],pr:['beh-LEH-zah'],casi:'Quase',ok:'Isso aí!'},
  'en-us':{en:'Agreed',tl:['Sounds','good'],pr:['SOWNDZ','gud'],casi:'Almost',ok:'Nice!'},
- 'en-gb':{en:'Sounds good',tl:['Lovely'],pr:['LUV-lee'],casi:'Nearly',ok:'Brilliant!'}};
+ 'en-gb':{en:'Sounds good',tl:['Lovely'],pr:['LUV-lee'],casi:'Nearly',ok:'Brilliant!'},
+ ja:{en:'Sounds good',tl:['いいね'],pr:['ee-NEH'],casi:'おしい！',ok:'その調子！',dot:'。'},
+ ko:{en:'Sounds good',tl:['좋아요'],pr:['JOH-ah-yoh'],casi:'거의요!',ok:'바로 그거예요!'}};
 const NAMES={cafe:'Lucas',pharmacy:'Emilio',kiosk:'Imma'};
 const LADDER=[12,19,27];                      // score climbs with each retry
 const SUB={12:[4,4,4],19:[6,6,7],27:[9,9,9]}; // pronunciation, grammar, fluency (/10)
-const WEAK={es:[['leche','LEH-cheh'],['cruasán','krwah-SAHN']],fr:[['crème','krehm'],['croissant','krwah-SAHN']],it:[['cappuccino','kahp-poo-CHEE-noh'],['cornetto','kor-NET-toh']],de:[['Milchkaffee','MILKH-kah-fay'],['Croissant','krwah-SAHN']],pt:[['galão','gah-LOWNG'],['nata','NAH-tah']],'pt-br':[['leite','LAY-chee'],['queijo','KAY-zhoo']],'en-us':[['latte','LAH-tay'],['muffin','MUH-fin']],'en-gb':[['white','wyte'],['scone','skon']]};
-const TIP={es:'Tip: “¿Me pones un café con leche?” sounds more local than “Un café con leche”.',fr:'Tip: “Je vais prendre un café crème” sounds more natural.',it:'Tip: “Mi fa un cappuccino?” sounds more local.',de:'Tip: “Ich hätte gern einen Milchkaffee” sounds more natural.',pt:'Tip: “Queria um galão, se faz favor” sounds more local.','pt-br':'Tip: “Me vê um café com leite?” sounds more local.','en-us':'Tip: “Can I get a latte?” sounds more natural than “A latte, please.”','en-gb':'Tip: “Could I have a flat white, please?” sounds more natural.'};
+const WEAK={es:[['leche','LEH-cheh'],['cruasán','krwah-SAHN']],fr:[['crème','krehm'],['croissant','krwah-SAHN']],it:[['cappuccino','kahp-poo-CHEE-noh'],['cornetto','kor-NET-toh']],de:[['Milchkaffee','MILKH-kah-fay'],['Croissant','krwah-SAHN']],pt:[['galão','gah-LOWNG'],['nata','NAH-tah']],'pt-br':[['leite','LAY-chee'],['queijo','KAY-zhoo']],'en-us':[['latte','LAH-tay'],['muffin','MUH-fin']],'en-gb':[['white','wyte'],['scone','skon']],ja:[['カフェラテ','kah-feh RAH-teh'],['クロワッサン','koo-roh-WAHS-sahn']],ko:[['카페라테','kah-peh-RAH-teh'],['크루아상','keu-roo-ah-SANG']]};
+const TIP={es:'Tip: “¿Me pones un café con leche?” sounds more local than “Un café con leche”.',fr:'Tip: “Je vais prendre un café crème” sounds more natural.',it:'Tip: “Mi fa un cappuccino?” sounds more local.',de:'Tip: “Ich hätte gern einen Milchkaffee” sounds more natural.',pt:'Tip: “Queria um galão, se faz favor” sounds more local.','pt-br':'Tip: “Me vê um café com leite?” sounds more local.','en-us':'Tip: “Can I get a latte?” sounds more natural than “A latte, please.”','en-gb':'Tip: “Could I have a flat white, please?” sounds more natural.',ja:'Tip: “カフェラテをひとつお願いします” sounds more natural.',ko:'Tip: “카페라테 한 잔 주시겠어요?” sounds more polite.'};
 
 // ------------------------------------------------------------------ state
 const X={drill:null,timer:null,card:null,clock:null,climb:null,tries:0,btns:[]};
@@ -64,13 +66,13 @@ function* drillRun(){const d=DRILL[lang()];X.drill={t0:now,word:-1,syl:-1,state:
   const lightWords=function*(dur){const n=d.tl.length;for(let i=0;i<n;i++){X.drill.word=i;X.drill.syl=-1;yield* wait(dur/n);}X.drill.word=-1;};
   const lightSyl=function*(w,dur){const n=d.pr[w].split('-').length;for(let s=0;s<n;s++){X.drill.word=w;X.drill.syl=s;yield* wait(dur/n);}X.drill.word=-1;X.drill.syl=-1;};
   yield* wait(.5);
-  scene.npcLine={text:d.tl.join(' ')+'.',t0:now};yield* lightWords(.8);yield* wait(.3);
+  scene.npcLine={text:d.tl.join(' ')+(d.dot||'.'),t0:now};yield* lightWords(.8);yield* wait(.3);
   // first try: close, but not quite
-  scene.mic=1;scene.me={text:d.tl.join(' ')+'.',t0:now,speaking:true};yield* lightWords(.9);scene.me.speaking=false;scene.me.tText=now;scene.mic=0;yield* wait(.3);
+  scene.mic=1;scene.me={text:d.tl.join(' ')+(d.dot||'.'),t0:now,speaking:true};yield* lightWords(.9);scene.me.speaking=false;scene.me.tText=now;scene.mic=0;yield* wait(.3);
   X.drill.state='casi';X.drill.tCasi=now;scene.npcLine={text:d.casi+'. '+d.pr.join(' ')+'.',t0:now};yield* wait(.45);
   yield* lightSyl(d.tl.length-1,1.0);yield* wait(.2);scene.me=null;
   // retry: green check
-  scene.mic=1;scene.me={text:d.tl.join(' ')+'.',t0:now,speaking:true};yield* lightWords(.9);scene.me.speaking=false;scene.me.tText=now;scene.mic=0;
+  scene.mic=1;scene.me={text:d.tl.join(' ')+(d.dot||'.'),t0:now,speaking:true};yield* lightWords(.9);scene.me.speaking=false;scene.me.tText=now;scene.mic=0;
   X.drill.state='ok';X.drill.chk=now;scene.npcLine={text:d.ok,t0:now};scene.ok=now;burst('coin',W/2,H*.74,10);yield* wait(1.3);
   scene.me=null;scene.ok=0;X.drill=null;}
 
@@ -178,7 +180,7 @@ function drawScoreCard(){const S=X.card;if(!S)return;const t=now-S.t0,e=eOut(cla
     g.fillStyle=C.ink;g.font=`800 14px ${FONT}`;g.textAlign='right';g.fillText(sub[i]+'/10',x+w-24,yy+5);});
   // transcript
   g.fillStyle=C.mute;g.font=`700 11px ${MONO}`;g.textAlign='left';g.fillText('TRANSCRIPT',x+24,y+222);g.fillStyle='#EAE0CC';g.fillRect(x+24,y+230,w-48,1);
-  const cafe=S.b.t==='cafe',rows=cafe?[['npc',d.tl.join(' ')+'.'],['me',d.tl.join(' ')+'.',lvl<2?d.tl[d.tl.length-1]:null,d.pr[d.pr.length-1]]]:[];
+  const cafe=S.b.t==='cafe',rows=cafe?[['npc',d.tl.join(' ')+(d.dot||'.')],['me',d.tl.join(' ')+(d.dot||'.'),lvl<2?d.tl[d.tl.length-1]:null,d.pr[d.pr.length-1]]]:[];
   const weak=WEAK[lg];(L[S.b.t]||[]).forEach(([n,m],i)=>{rows.push(['npc',n]);const wk=cafe&&weak[i]&&lvl<=i;rows.push(['me',m,wk?weak[i][0]:null,wk?weak[i][1]:null]);});
   let ry=y+256;g.save();g.beginPath();g.rect(x,y+234,w,h-340);g.clip();
   for(const[who,text,bad,hint]of rows){const npcRow=who==='npc';g.font=`700 10px ${MONO}`;g.fillStyle=npcRow?C.terra:C.teal;g.fillText(npcRow?(NAMES[S.b.t]||'NPC').toUpperCase():'YOU',x+24,ry);

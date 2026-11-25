@@ -73,7 +73,7 @@ body.capture #stage{height:960px;width:540px;border-radius:0;box-shadow:none}
     <label>Mode<select id="s_mode"><option value="auto">Auto video</option><option value="play">Play: tap buildings</option><option value="score">Score card</option></select></label>
     <label>Character<select id="s_char"><option value="ana">Ana</option><option value="leo">Leo</option><option value="ana_rabbit">Ana (Rabbit)</option><option value="leo_rabbit">Leo (Rabbit)</option></select></label>
     <label>Café barista<select id="s_barista"><option value="lucia">Lucía (female)</option><option value="lucas">Lucas (male)</option></select></label>
-    <label>Dialogue language<select id="s_lang"><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="de">German</option><option value="pt">Portuguese (Portugal)</option><option value="pt-br">Portuguese (Brazil)</option><option value="en-us">English (US)</option><option value="en-gb">English (UK)</option></select></label>
+    <label>Dialogue language<select id="s_lang"><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="de">German</option><option value="pt">Portuguese (Portugal)</option><option value="pt-br">Portuguese (Brazil)</option><option value="en-us">English (US)</option><option value="en-gb">English (UK)</option><option value="ja">Japanese</option><option value="ko">Korean</option></select></label>
     <div id="scoreOpts" hidden>
       <label>Attempts<select id="s_att"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
       <label>Scores (out of 25)<input id="s_scores" type="text" inputmode="numeric" autocomplete="off"></label>
@@ -174,7 +174,13 @@ const LANG={
   pharmacy:[['Hi there. How can I help you?','Something for a headache, please.']],kiosk:[['What can I get you?','A newspaper and a bottle of water.']],tasca:[['What’ll it be?','Some appetizers and a glass of red, please.']]},
  'en-gb':{name:'British English',taxi:[['That’s twelve pounds, please.','Here you are. Cheers!']],stall:[['What can I get you, love?','A kilo of oranges, please.']],
   cafe:[['Hiya! What can I get you?','A flat white, please.'],['Anything else?','Yes, a scone, thanks.']],
-  pharmacy:[['Afternoon. How can I help?','Something for a headache, please.']],kiosk:[['What would you like?','A newspaper and a bottle of water, please.']],tasca:[['What are you having?','A pint and some crisps, please.']]}};
+  pharmacy:[['Afternoon. How can I help?','Something for a headache, please.']],kiosk:[['What would you like?','A newspaper and a bottle of water, please.']],tasca:[['What are you having?','A pint and some crisps, please.']]},
+ ja:{name:'Japanese',taxi:[['1,200円です。','はい、どうぞ。ありがとうございます！']],stall:[['いらっしゃいませ！何にしますか？','オレンジを1キロください。']],
+  cafe:[['いらっしゃいませ！ご注文は？','カフェラテをお願いします。'],['ほかにご注文は？','はい、クロワッサンもお願いします。']],
+  pharmacy:[['こんにちは。どうされましたか？','頭痛薬をください。']],kiosk:[['いらっしゃいませ。','新聞と水をください。']],tasca:[['ご注文はお決まりですか？','枝豆と生ビールをお願いします。']]},
+ ko:{name:'Korean',taxi:[['12,000원입니다.','여기 있어요. 감사합니다!']],stall:[['뭐 드릴까요?','오렌지 1킬로 주세요.']],
+  cafe:[['안녕하세요! 주문하시겠어요?','카페라테 한 잔 주세요.'],['더 필요하신 건 없으세요?','네, 크루아상도 하나 주세요.']],
+  pharmacy:[['안녕하세요. 어디가 불편하세요?','두통약 좀 주세요.']],kiosk:[['뭐 찾으세요?','신문이랑 물 하나 주세요.']],tasca:[['뭐 드시겠어요?','치킨이랑 맥주 주세요.']]}};
 // {o/a}: word ending that follows the speaker's gender (Portuguese obrigado / obrigada)
 const L=JSON.parse(JSON.stringify(LANG[CFG.lang]||LANG.es).replace(/\{(\w*)\/(\w*)\}/g,(m,a,b)=>CH.f?b:a));
 
@@ -355,7 +361,19 @@ const FLAGS={es:{t:'h',s:[['#C60B1E',1],['#FFC400',2],['#C60B1E',1]]},fr:{t:'v',
  'en-gb':{t:'h',s:[['#012169',1]],em:(shape)=>{const k=40/62,diag=(a,b,t)=>[[a[0],a[1]-t],[b[0],b[1]-t],[b[0],b[1]+t],[a[0],a[1]+t]];
    shape(diag([0,0],[1,1],.12),'#FFFFFF');shape(diag([0,1],[1,0],.12),'#FFFFFF');shape(diag([0,0],[1,1],.045),'#C8102E');shape(diag([0,1],[1,0],.045),'#C8102E');
    shape([[0,.33],[1,.33],[1,.67],[0,.67]],'#FFFFFF');shape([[.5-.17*k,0],[.5+.17*k,0],[.5+.17*k,1],[.5-.17*k,1]],'#FFFFFF');
-   shape([[0,.4],[1,.4],[1,.6],[0,.6]],'#C8102E');shape([[.5-.1*k,0],[.5+.1*k,0],[.5+.1*k,1],[.5-.1*k,1]],'#C8102E');}}};
+   shape([[0,.4],[1,.4],[1,.6],[0,.6]],'#C8102E');shape([[.5-.1*k,0],[.5+.1*k,0],[.5+.1*k,1],[.5-.1*k,1]],'#C8102E');}},
+ ja:{t:'h',s:[['#FFFFFF',1]],em:(shape,circ)=>shape(circ(.5,.5,.3,32),'#BC002D')},
+ // taegukgi: work in square units (x across in flag heights, 0..62/40) and map x -> u
+ ko:{t:'h',s:[['#FFFFFF',1]],em:(shape)=>{const k=40/62,cx=.5/k,cy=.5,uv=q=>q.map(([x,y])=>[x*k,y]);
+   const disk=(x,y,r,a0=0,a1=Math.PI*2,n=32)=>Array.from({length:n+1},(_,i)=>{const a=a0+(a1-a0)*i/n;return[x+r*Math.cos(a),y+r*Math.sin(a)];});
+   const tilt=Math.atan2(2,3),R=.25,ax=Math.cos(tilt),ay=Math.sin(tilt);
+   shape(uv(disk(cx,cy,R)),'#0047A0');shape(uv(disk(cx,cy,R,tilt+Math.PI,tilt+Math.PI*2)),'#CD2E3A');
+   shape(uv(disk(cx-ax*R/2,cy-ay*R/2,R/2)),'#CD2E3A');shape(uv(disk(cx+ax*R/2,cy+ay*R/2,R/2)),'#0047A0');
+   // trigrams on the diagonals: bars of each one, 1 = solid, 0 = broken (from the centre outwards)
+   for(const[sx,sy,bars]of[[-1,-1,[1,1,1]],[1,1,[0,0,0]],[1,-1,[0,1,0]],[-1,1,[1,0,1]]]){const dx=sx*cx,dy=sy*cy,l=Math.hypot(dx,dy),nx=dx/l,ny=dy/l,px=-ny,py=nx;
+     bars.forEach((solid,i)=>{const d=.36+i*.058,mx=cx+nx*d,my=cy+ny*d,hl=.125,th=.021;
+       const seg=(a,b)=>shape(uv([[mx+px*a-nx*th,my+py*a-ny*th],[mx+px*b-nx*th,my+py*b-ny*th],[mx+px*b+nx*th,my+py*b+ny*th],[mx+px*a+nx*th,my+py*a+ny*th]]),'#111111');
+       if(solid)seg(-hl,hl);else{seg(-hl,-.014);seg(.014,hl);}});}}}};
 const POLE={x:FC[0]+.35,y:FC[1]+5.0};
 function drawFlagpole(){const a=clamp((now-FOUNT.t0-.3)/.6);if(a<=0)return;const s=eBack(a);
   const b=P(POLE.x,POLE.y),hgt=4.2*s,t=P(POLE.x,POLE.y,hgt),k=cam.z;
@@ -484,7 +502,11 @@ function drawHUD(){if(!hud.show)return;const a=eOut(clamp((now-hud.show)/.6));g.
   pillVal(HC,'coin',hud.coins,hud.coinPulse);pillVal(HG,'gem',hud.gems,hud.gemPulse);g.restore();}
 
 // ============================================================ bubbles on the map
-function wrap(text,maxW){const ws=text.split(' '),out=[];let cur='';for(const w of ws){const t=cur?cur+' '+w:w;if(g.measureText(t).width>maxW&&cur){out.push(cur);cur=w;}else cur=t;}if(cur)out.push(cur);return out;}
+// wraps at spaces; Japanese has none, so each kana/kanji is its own break point (closing punctuation stays on the line before)
+function wrap(text,maxW){const out=[];let cur='',sp=false;
+  for(const tk of text.match(/[\u3000-\u30ff\u4e00-\u9fff\uff00-\uffef]|[^\s\u3000-\u30ff\u4e00-\u9fff\uff00-\uffef]+|\s+/g)||[]){if(/^\s+$/.test(tk)){sp=true;continue;}
+    const t=cur?cur+(sp?' ':'')+tk:tk;sp=false;if(g.measureText(t).width>maxW&&cur&&!/^[。、！？」』）]$/.test(tk)){out.push(cur);cur=tk;}else cur=t;}
+  if(cur)out.push(cur);return out;}
 function drawBubble(){if(!bubble)return;const t=clamp((now-bubble.t0)/.25),s=eBack(t);let ax,ay;
   if(bubble.who==='npc'){const b=bubble.anchor,r0=spriteRect(b,IMG[SPR[b.t]]);ax=r0.cx+(b.face==='+x'?30:-30);ay=r0.by-r0.sh*.55;}
   else{const p=heroScreen();ax=p[0];ay=p[1]-TW*1.62*cam.z;}
